@@ -59,10 +59,10 @@ SU := python3 tools/devbridge/su
 dev-bridge-package: ## Gera dist/me_dev_bridge-*.rbz (extensão SÓ de desenvolvimento)
 	$(RUN) dev ruby tools/build/package.rb tools/devbridge/extension
 
-su-connect: ## Configura o SSH do desktop: make su-connect SSH=usuario@ip [KEY=~/.ssh/id] [PORT=7860]
-	$(SU) connect --ssh '$(SSH)' $(if $(PORT),--port $(PORT)) $(if $(KEY),--key '$(KEY)') $(if $(TOKEN),--token '$(TOKEN)')
+su-connect: ## Conecta ao desktop: make su-connect SSH=usuario@ip TOKEN=... KEY=~/.ssh/id [PORT=7860]
+	$(SU) connect --ssh '$(SSH)' $(if $(PORT),--port $(PORT)) $(if $(KEY),--key '$(KEY)') $(if $(TOKEN),--token '$(TOKEN)') $(if $(SSH_PORT),--ssh-port $(SSH_PORT))
 
-su-install-bridge: ## Copia a Dev Bridge para o Plugins do SketchUp no desktop (SU_YEAR=2026)
+su-install-bridge: ## (chave modo full) Copia a Dev Bridge para o Plugins do desktop (SU_YEAR=2026)
 	$(SU) install-bridge $(SU_YEAR)
 
 su-ping: ## Testa a conexão com o SketchUp do desktop

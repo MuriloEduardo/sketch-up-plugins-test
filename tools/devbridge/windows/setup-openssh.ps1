@@ -7,6 +7,9 @@
   1. Instala e liga o OpenSSH Server (recurso opcional do Windows).
   2. Restringe a regra de firewall da porta 22 ao perfil de rede Privado.
   3. Autoriza a chave pública da máquina de desenvolvimento (WSL).
+     Por padrão a chave é RESTRITA: só permite o túnel até a Dev Bridge
+     (127.0.0.1:<BridgePort>). Sem shell, sem cópia de arquivos, sem acesso a
+     mais nada. Com a Dev Bridge desligada, a chave não dá acesso algum.
   4. Desliga o login SSH por senha (somente chave).
 
   Rode no PowerShell COMO ADMINISTRADOR, logado com o usuário que usa o SketchUp:
@@ -15,10 +18,19 @@
 
 .PARAMETER PublicKey
   Conteúdo de ~/.ssh/id_ed25519_sketchup.pub gerado no WSL.
+
+.PARAMETER BridgePort
+  Porta da Dev Bridge no desktop (padrão 7860).
+
+.PARAMETER AllowShell
+  Autoriza a chave SEM restrições (shell e scp). Use só se o dono do
+  computador quiser; habilita make su-install-bridge e leitura automática do token.
 #>
 param(
   [Parameter(Mandatory = $true)]
-  [string]$PublicKey
+  [string]$PublicKey,
+  [int]$BridgePort = 7860,
+  [switch]$AllowShell
 )
 
 $ErrorActionPreference = 'Stop'
@@ -60,10 +72,19 @@ if ($isAdmin) {
   $keysFile = Join-Path $env:USERPROFILE '.ssh\authorized_keys'
   New-Item -ItemType Directory -Force -Path (Split-Path $keysFile) | Out-Null
 }
-$existing = if (Test-Path $keysFile) { Get-Content $keysFile } else { @() }
-if ($existing -notcontains $PublicKey.Trim()) {
-  Add-Content -Path $keysFile -Value $PublicKey.Trim() -Encoding ascii
+$key = $PublicKey.Trim()
+if ($AllowShell) {
+  $entry = $key
+} else {
+  # Comando forçado + restrict: nenhuma sessão de shell; só o encaminhamento
+  # de porta para a Dev Bridge em loopback.
+  $entry = "command=`"echo tunnel-only`",restrict,port-forwarding,permitopen=`"127.0.0.1:$BridgePort`" $key"
 }
+$keyBody = ($key -split ' ')[1]
+$existing = if (Test-Path $keysFile) { @(Get-Content $keysFile) } else { @() }
+# Substitui entradas anteriores da mesma chave (ex.: trocar de modo).
+$kept = $existing | Where-Object { $_ -notmatch [regex]::Escape($keyBody) }
+@($kept) + $entry | Where-Object { $_ } | Set-Content -Path $keysFile -Encoding ascii
 if ($isAdmin) {
   icacls $keysFile /inheritance:r /grant '*S-1-5-32-544:F' /grant '*S-1-5-18:F' | Out-Null
 } else {
@@ -80,7 +101,12 @@ $addresses = Get-NetIPAddress -AddressFamily IPv4 |
   Where-Object { $_.IPAddress -match '^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)' } |
   Select-Object -ExpandProperty IPAddress
 Write-Host ''
-Write-Host 'Pronto. No WSL, rode:' -ForegroundColor Green
-foreach ($address in $addresses) {
-  Write-Host "  make su-connect SSH=$($env:USERNAME)@$address KEY=~/.ssh/id_ed25519_sketchup"
+if ($AllowShell) {
+  Write-Host 'Chave autorizada SEM restrições (shell/scp).' -ForegroundColor Yellow
+} else {
+  Write-Host "Chave autorizada SOMENTE para túnel até 127.0.0.1:$BridgePort." -ForegroundColor Green
 }
+Write-Host 'Pronto. Abra o SketchUp, instale a Dev Bridge (.rbz) e use'
+Write-Host 'Extensions > Dev Bridge (DEV ONLY) > Connection Info: o comando para o WSL'
+Write-Host '(com usuário, IP e token) é copiado para a área de transferência.'
+Write-Host ("Usuário: $($env:USERNAME)   IPs: " + ($addresses -join ', '))

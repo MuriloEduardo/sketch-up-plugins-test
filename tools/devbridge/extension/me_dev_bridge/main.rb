@@ -76,7 +76,7 @@ module MuriloEduardoDev
     def self.connect_command
       host = lan_addresses.first || '<ip-desta-maquina>'
       user = ENV.fetch('USERNAME', '<usuario-windows>')
-      "make su-connect SSH=#{user}@#{host}"
+      "make su-connect SSH=#{user}@#{host} TOKEN=#{config.token} KEY=~/.ssh/id_ed25519_sketchup"
     end
 
     def self.start
@@ -96,7 +96,7 @@ module MuriloEduardoDev
           "Status: #{server.running? ? 'running' : 'stopped'} (127.0.0.1:#{config.port}, SSH tunnel only)\n" \
           "LAN addresses: #{lan_addresses.join(', ')}\n\n" \
           "Run on the development machine (copied to clipboard):\n#{command}\n\n" \
-          "The token is read over SSH from #{config.path}.",
+          'Keep this token private. Regenerate it to revoke access.',
           MB_MULTILINE, MENU_TITLE
         )
     end

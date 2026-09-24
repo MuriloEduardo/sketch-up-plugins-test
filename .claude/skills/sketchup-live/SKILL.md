@@ -5,14 +5,15 @@ description: Run Ruby inside the user's SketchUp on the Windows desktop (over th
 
 # Inspect and drive the live SketchUp
 
-SketchUp + V-Ray run on a separate Windows 11 desktop on the LAN. The Dev Bridge extension
+SketchUp + V-Ray run on a separate Windows 11 desktop on the LAN that belongs to ANOTHER PERSON
+(not the user). Their consent and their ongoing work come first. The Dev Bridge extension
 (`tools/devbridge/extension/`) listens on 127.0.0.1 there; `tools/devbridge/su` reaches it through
 an SSH tunnel. Setup: `docs/remote-desktop-setup.md`.
 
 ## Preconditions
 
 1. `make su-ping` returns JSON with `sketchup_version`. If not:
-   - exit 2 "sem configuração" → the user must run `make su-connect SSH=user@ip KEY=...`.
+   - exit 2 "sem configuração" → the user must run the command copied from *Dev Bridge › Connection Info* (`make su-connect SSH=... TOKEN=... KEY=...`).
    - SSH failure → desktop off, network Public, IP changed (tell the user; do not retry blindly).
    - "a ponte não respondeu" → ask the user to open SketchUp and click
      *Extensions › Dev Bridge (DEV ONLY) › Start*.
@@ -33,6 +34,10 @@ Result: `{"ok":true,"result":"<inspect>","stdout":"...","seconds":...}` or
 
 ## Rules
 
+- Before `make su-test` (TestUp replaces the open model with an empty one), heavy scripts or
+  anything touching the model, ask the user to confirm the desktop owner is not using SketchUp.
+- Never browse or read the owner's personal files; only touch the workspace, the V-Ray docs
+  folder and what the task needs.
 - Read-only by default. Anything that modifies the model must be wrapped in
   `model.start_operation(...)`/`commit_operation` and must be something the user asked for.
 - Never save, close, purge or open models without explicit user approval.

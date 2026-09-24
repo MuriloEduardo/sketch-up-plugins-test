@@ -10,7 +10,7 @@ tools/devbridge/su ──SSH (chave, :22)───► OpenSSH Server
   túnel 127.0.0.1:17860 ────────────────► 127.0.0.1:7860  Dev Bridge (extensão dev)
     /sync   src/, tests/sketchup/  ─────►   %APPDATA%\MuriloEduardoDev\workspace
     /reload /eval /test /ping               ($LOAD_PATH → extensões em desenvolvimento)
-  scp (install-bridge, pull-vray-docs) ─►   Plugins\, doc da API V-Ray
+  chave SSH só-túnel (padrão): sem shell/scp; doc do V-Ray vem pela ponte
 
 Docker (compose.yaml) — Ruby 3.2 = SketchUp 2024–2026
   make lint | test | package | docs | refdocs     (também no GitHub Actions)

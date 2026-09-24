@@ -4,16 +4,21 @@
 A ponte escuta só em 127.0.0.1 no desktop. Este cliente mantém um túnel SSH
 persistente (ControlMaster) e envia requisições HTTP autenticadas por token.
 
+Dois modos de chave SSH (definidos por setup-openssh.ps1 no desktop):
+  tunnel  (padrão) a chave só abre o túnel até a ponte; token informado à mão
+          (copiado de Extensions › Dev Bridge › Connection Info).
+  full    chave sem restrição: token lido via SSH e install-bridge via scp.
+
 Uso (normalmente via Makefile):
-  su connect --ssh usuario@192.168.0.10 [--key ~/.ssh/id] [--port 7860]
+  su connect --ssh usuario@192.168.0.10 --token TOKEN [--key ~/.ssh/id] [--port 7860]
   su ping
   su eval 'Sketchup.active_model.title'      |  su eval -f script.rb  |  echo code | su eval -
   su eval --json 'Sketchup.active_model.materials.map(&:name)'
   su sync                 envia src/ e tests/ para o workspace do desktop
   su reload               registra extensões novas e recarrega a implementação
   su test [FILTRO]        roda tests/sketchup com TestUp (ex.: TC_VRayBridge#)
-  su install-bridge ANO   copia a extensão Dev Bridge para o Plugins do desktop
-  su pull-vray-docs       baixa a doc oficial da API Ruby do V-Ray instalada
+  su install-bridge ANO   (modo full) copia a Dev Bridge para o Plugins do desktop
+  su pull-vray-docs       baixa, pela ponte, a doc oficial da API Ruby do V-Ray
   su tunnel-stop          encerra o túnel
 
 Configuração: .devbridge.env na raiz do repositório (fora do git).
@@ -67,8 +72,11 @@ def write_env(values):
 
 
 def load_env():
-    """Configuração com token; busca o token no desktop via SSH se faltar."""
+    """Configuração com token (no modo full, busca o token via SSH se faltar)."""
     env = read_env()
+    if not env.get("SU_TOKEN") and env.get("SU_MODE") != "full":
+        fail("falta o token. No desktop: Extensions › Dev Bridge › Connection Info copia o comando "
+             "`make su-connect ... TOKEN=...`; rode-o aqui.")
     if not env.get("SU_TOKEN"):
         code, output, stderr = ssh_run(env, 'type "%APPDATA%\\MuriloEduardoDev\\config.json"')
         if code != 0:
@@ -83,8 +91,10 @@ def control_socket(env):
     return str(pathlib.Path.home() / ".ssh" / f"devbridge-{env['SU_SSH'].replace('@', '_')}.sock")
 
 
-def ssh_base(env):
+def ssh_base(env, port_flag="-p"):
     options = ["-o", "BatchMode=yes", "-o", "ExitOnForwardFailure=yes", "-o", "ServerAliveInterval=30"]
+    if env.get("SU_SSH_PORT"):
+        options += [port_flag, env["SU_SSH_PORT"]]
     if env.get("SU_SSH_KEY"):
         options += ["-i", os.path.expanduser(env["SU_SSH_KEY"]), "-o", "IdentitiesOnly=yes"]
     return options
@@ -94,7 +104,7 @@ def ensure_tunnel(env):
     if os.environ.get("SU_DIRECT") == "1":  # só para testes locais sem SSH
         return
     socket = control_socket(env)
-    check = subprocess.run(["ssh", "-S", socket, "-O", "check", env["SU_SSH"]], capture_output=True)
+    check = subprocess.run(["ssh", *ssh_base(env), "-S", socket, "-O", "check", env["SU_SSH"]], capture_output=True)
     if check.returncode == 0:
         return
     local, remote = env["SU_LOCAL_PORT"], env["SU_PORT"]
@@ -140,14 +150,18 @@ def collect_files():
 
 
 def scp(env, sources, target, recursive=False):
-    command = ["scp", *ssh_base(env), *(["-r"] if recursive else []), *sources, target]
+    command = ["scp", *ssh_base(env, port_flag="-P"), *(["-r"] if recursive else []), *sources, target]
     result = subprocess.run(command, capture_output=True, text=True)
     if result.returncode != 0:
         fail(f"scp falhou:\n{result.stderr.strip()}")
 
 
-def ssh_run(env, remote_command):
-    result = subprocess.run(["ssh", *ssh_base(env), env["SU_SSH"], remote_command], capture_output=True, text=True)
+def ssh_run(env, remote_command, first_contact=False):
+    # first_contact: aceita e grava a chave do host na primeira conexão (TOFU);
+    # depois disso, uma chave diferente volta a ser recusada.
+    trust = ["-o", "StrictHostKeyChecking=accept-new"] if first_contact else []
+    result = subprocess.run(["ssh", *ssh_base(env), *trust, env["SU_SSH"], remote_command],
+                            capture_output=True, text=True)
     return result.returncode, result.stdout, result.stderr
 
 
@@ -156,14 +170,21 @@ def cmd_connect(args):
     values = {"SU_SSH": args.ssh, "SU_PORT": remote_port, "SU_LOCAL_PORT": remote_port + LOCAL_PORT_OFFSET}
     if args.key:
         values["SU_SSH_KEY"] = args.key
+    if args.ssh_port:
+        values["SU_SSH_PORT"] = args.ssh_port
+    write_env(values)
+    code, output, stderr = ssh_run(read_env(), "echo ok", first_contact=True)
+    if code != 0:
+        fail(f"SSH para {args.ssh} falhou: {stderr.strip()}\nVeja docs/remote-desktop-setup.md.")
+    values["SU_MODE"] = "tunnel" if "tunnel-only" in output else "full"
     if args.token:
         values["SU_TOKEN"] = args.token
     write_env(values)
-    code, output, stderr = ssh_run(read_env(), "echo ok")
-    if code != 0:
-        fail(f"SSH para {args.ssh} falhou: {stderr.strip()}\nVeja docs/remote-desktop-setup.md.")
-    print(f"SSH ok. Configuração salva em {ENV_FILE.name}.")
-    print("Próximo: make su-install-bridge (primeira vez) ou make su-ping.")
+    print(f"SSH ok (modo {values['SU_MODE']}). Configuração salva em {ENV_FILE.name}.")
+    if values["SU_MODE"] == "tunnel" and not args.token:
+        print("Falta o token: no desktop, Extensions › Dev Bridge › Connection Info copia o comando completo.")
+    else:
+        print("Próximo: make su-ping (Dev Bridge ligada no SketchUp do desktop).")
 
 
 def cmd_eval(args):
@@ -206,6 +227,10 @@ def cmd_test(args):
 
 def cmd_install_bridge(args):
     env = read_env()  # não precisa de token: a ponte ainda não existe
+    if env.get("SU_MODE") != "full":
+        fail("a chave SSH é só-túnel (padrão): instale me_dev_bridge-*.rbz à mão no desktop, em "
+             "Extensions › Extension Manager › Install Extension (gere com make dev-bridge-package "
+             "ou baixe dos artefatos do CI). Veja docs/remote-desktop-setup.md.")
     code, appdata, stderr = ssh_run(env, "echo %APPDATA%")
     if code != 0:
         fail(f"ssh falhou: {stderr.strip()}")
@@ -218,24 +243,43 @@ def cmd_install_bridge(args):
     print(f"Dev Bridge instalada em {plugins}. Reinicie o SketchUp e use Extensions › Dev Bridge › Start.")
 
 
+PULL_VRAY_DOCS_RUBY = """
+require 'base64'
+dir = %s.find { |candidate| File.exist?(File.join(candidate, '_index.html')) }
+if dir
+  files = Dir.glob(File.join(dir, '**', '*')).select { |path| File.file?(path) }
+  { 'dir' => dir,
+    'files' => files.to_h { |path| [path.delete_prefix(dir + '/'), Base64.strict_encode64(File.binread(path))] } }
+end
+"""
+
+
 def cmd_pull_vray_docs(_args):
-    env = read_env()
+    env = load_env()
+    code = PULL_VRAY_DOCS_RUBY % json.dumps(VRAY_DOC_DIRS)
+    result = request(env, "POST", "/eval", code.encode("utf-8"), {"X-Result-Format": "json"}, timeout=600)
+    if not result.get("ok"):
+        emit(result)
+    payload = result.get("result")
+    if not payload:
+        fail("documentação do V-Ray não encontrada no desktop (V-Ray for SketchUp instalado?).")
     target = REPO / "docs" / "reference" / "_cache" / "vray-ruby-api-installed"
-    for source in VRAY_DOC_DIRS:
-        code, _, _ = ssh_run(env, f'if not exist "{source}/_index.html" exit 3')
-        if code == 0:
-            target.mkdir(parents=True, exist_ok=True)
-            scp(env, [f"{env['SU_SSH']}:\"{source}/*\""], str(target), recursive=True)
-            subprocess.run([sys.executable, str(REPO / "tools" / "docs" / "html_to_text.py"), str(target)],
-                           stdout=open(f"{target}.txt", "w"), check=True)
-            print(f"Doc importada de {source}\nTexto para busca: {target}.txt")
-            return
-    fail("documentação do V-Ray não encontrada no desktop (V-Ray for SketchUp instalado?).")
+    for relative, encoded in payload["files"].items():
+        if relative.startswith("/") or ".." in pathlib.PurePosixPath(relative).parts:
+            continue  # nunca escrever fora da pasta de destino
+        path = target / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(base64.b64decode(encoded))
+    with open(f"{target}.txt", "w") as text:
+        subprocess.run([sys.executable, str(REPO / "tools" / "docs" / "html_to_text.py"), str(target)],
+                       stdout=text, check=True)
+    print(f"{len(payload['files'])} arquivos de {payload['dir']}")
+    print(f"Texto para busca: {target.relative_to(REPO)}.txt")
 
 
 def cmd_tunnel_stop(_args):
-    env = load_env()
-    subprocess.run(["ssh", "-S", control_socket(env), "-O", "exit", env["SU_SSH"]])
+    env = read_env()
+    subprocess.run(["ssh", *ssh_base(env), "-S", control_socket(env), "-O", "exit", env["SU_SSH"]])
 
 
 def main():
@@ -244,8 +288,9 @@ def main():
 
     connect = commands.add_parser("connect")
     connect.add_argument("--ssh", required=True, help="usuario@ip do desktop Windows")
-    connect.add_argument("--token", help="opcional: por padrão é lido do desktop via SSH")
-    connect.add_argument("--port", type=int)
+    connect.add_argument("--token", help="da janela Connection Info (obrigatório no modo túnel)")
+    connect.add_argument("--port", type=int, help="porta da Dev Bridge no desktop (padrão 7860)")
+    connect.add_argument("--ssh-port", help="porta SSH do desktop (padrão 22)")
     connect.add_argument("--key", help="chave SSH privada (ex.: ~/.ssh/id_ed25519_sketchup)")
     connect.set_defaults(handler=cmd_connect)
 

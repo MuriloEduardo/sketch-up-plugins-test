@@ -41,6 +41,17 @@ desligada, firewall só em rede Privada). O token é lido pelo cliente via SSH
 (quem tem SSH já tem controle da máquina, então a ponte não amplia o risco).
 Código vai por `/sync` (sem commit) para `%APPDATA%\MuriloEduardoDev\workspace`.
 
+### 2026-09-24 — Desktop de outra pessoa: chave SSH só-túnel por padrão
+O desktop com SketchUp pertence a outra pessoa. Para que o dono controle o
+acesso, a chave do notebook é gravada com
+`command="echo tunnel-only",restrict,port-forwarding,permitopen="127.0.0.1:7860"`:
+sem shell/scp, só túnel até a ponte. Com a ponte desligada, não há acesso
+algum. Consequências: token vem da janela Connection Info (não por SSH),
+a ponte é instalada à mão pelo `.rbz`, e a doc do V-Ray é baixada pela
+própria ponte. Modo completo (`-AllowShell`) só com anuência do dono.
+Verificado contra sshd real (OpenSSH Linux) em container; falta confirmar no
+Win32-OpenSSH do desktop.
+
 ### 2026-09-24 — Docs de terceiros fora do git
 Páginas da Chaos, fóruns e artigos ficam em `docs/reference/_cache/`
 (ignorado), regeneráveis por `make refdocs`. Versionamos apenas texto próprio

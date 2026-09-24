@@ -2,6 +2,19 @@
 
 Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 
+## 2026-09-24 — Desktop é de outra pessoa: chave só-túnel
+
+- O notebook é pessoal do usuário; o desktop com SketchUp/V-Ray é de outra
+  pessoa. Chave SSH agora restrita por padrão (só túnel até a ponte), token
+  vindo da janela Connection Info, ponte instalada à mão pelo `.rbz`, doc do
+  V-Ray baixada pela ponte, `--ssh-port`, confiança no primeiro contato (TOFU).
+- Guia reescrito com consentimento, controle pelo dono, cuidado com o
+  trabalho dele (su-test troca o modelo), licenças e revogação.
+- Validado contra sshd real em container com a mesma linha de
+  `authorized_keys`: shell bloqueado, outra porta bloqueada, scp bloqueado,
+  ping/eval/sync/test/pull-vray-docs pelo túnel, 401 com token errado.
+  Achou e corrigiu: primeira conexão falhava (host key desconhecida).
+
 ## 2026-09-24 — SketchUp no desktop da rede + Dev Bridge via SSH
 
 Feito:

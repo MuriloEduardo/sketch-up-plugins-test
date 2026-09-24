@@ -70,7 +70,11 @@ Arquitetura e topologia WSL ↔ desktop Windows ↔ Docker: `docs/architecture.m
 - A Dev Bridge executa código arbitrário: nunca entra num `.rbz` de produto nem
   no Extension Warehouse; só escuta em 127.0.0.1 e é acessada por SSH. Não
   altere essas garantias de segurança sem pedido explícito do usuário.
-- Não salvar/fechar/alterar o modelo do usuário via ponte sem pedido explícito.
+- O desktop e o SketchUp pertencem a outra pessoa. Via ponte: não salvar,
+  fechar, abrir nem alterar modelos sem pedido explícito; antes de
+  `make su-test` (troca o modelo aberto) ou de scripts longos, confirme com o
+  usuário que o dono do desktop não está usando o SketchUp. Nunca ler arquivos
+  pessoais da conta dele além do necessário para a tarefa.
 - Git: commits pequenos em pt-BR, só quando o usuário pedir; rodar `make check` antes.
 
 ## Memória do projeto
