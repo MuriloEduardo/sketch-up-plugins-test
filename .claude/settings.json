@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make help)",
+      "Bash(make check)",
+      "Bash(make lint)",
+      "Bash(make lint-fix)",
+      "Bash(make test)",
+      "Bash(make package)",
+      "Bash(make docs)",
+      "Bash(make build)",
+      "Bash(make su-ping)",
+      "Bash(docker compose run --rm lint)",
+      "Bash(docker compose run --rm test)",
+      "Bash(docker compose run --rm package)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "ask": [
+      "Bash(make su-loader:*)",
+      "Bash(make su-launch:*)",
+      "Bash(make su-debug:*)",
+      "Bash(make su-testup:*)",
+      "Bash(tools/sketchup/su-eval:*)",
+      "Bash(make su-eval:*)"
+    ]
+  }
+}

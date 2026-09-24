@@ -1,0 +1,283 @@
+# V-Ray for SketchUp — API Ruby ("Script Access")
+
+Base de conhecimento consolidada de todas as fontes públicas disponíveis em
+2026-09. **A documentação oficial completa da API só vem com a instalação do
+V-Ray** (`Extensions > V-Ray > Help > API Documentation`, arquivo
+`...\V-Ray for SketchUp\extension\documentation\_index.html`). Quando o V-Ray
+estiver instalado, rode `make vray-docs-import` e confronte este documento com
+ela — e atualize-o.
+
+Legenda de confiabilidade:
+- **[doc]** página oficial da Chaos.
+- **[chaos-dev]** resposta de desenvolvedor/suporte da Chaos no fórum (noel.warren = líder do time V-Ray for SketchUp; konstantin_chaos, Peter.Chaushev, iva_mancheva, natalia.gruzdova = suporte).
+- **[comunidade]** código de usuários que relataram funcionar.
+- **[a verificar]** inferência; confirmar com `make su-eval` antes de depender.
+
+---
+
+## 1. Duas camadas de parâmetros (o conceito mais importante)
+
+O V-Ray for SketchUp mantém uma **cena V-Ray** (plugins do core, os mesmos do
+V-Ray Standalone/AppSDK) mais uma camada de **user data** usada pela UI do
+SketchUp (Asset Editor). **[doc]**
+
+- Parâmetros *user data* são a ponte UI ↔ V-Ray for SketchUp; os parâmetros
+  reais do core são derivados deles **no momento do render**.
+- Para uma mudança via script aparecer na UI, altere o parâmetro *user data*
+  correspondente. Se alterar só o do core, a mudança afeta apenas a cena V-Ray
+  e pode ser sobrescrita. **[doc]**
+- Como descobrir os nomes *user data*: exporte um `.vropt` (settings) ou um
+  `.vrmat` (asset) e procure `isUserData="1"`. **[doc]**
+- Alternativa prática: ajuste o valor na UI e rode `plugin.dump` para ver o que
+  mudou. **[chaos-dev]**
+- Evidência: `quality_preset` é escrito em `/SettingsOptions`, mas **não existe**
+  no plugin `SettingsOptions` do core (índice AppSDK) → é *user data*.
+- Evidência: em material, `opacity_tex` não tinha efeito; o correto era o
+  *user data* `opacity_tex_float`. **[chaos-dev]** Padrão observado nos nomes
+  *user data*: sufixos `_float`, `_tex_on`, `_tex` (ex.: `reflect_glossiness_float`,
+  `opacity_tex_tex_on`). **[comunidade]**
+
+Referência dos parâmetros do **core**: `docs/reference/_cache/vray-plugins.md`
+(535 plugins, 9.714 parâmetros, gerado por `make refdocs`). Útil para
+entender tipos/semântica, mas lembre da camada *user data*.
+
+## 2. Modelo de objetos
+
+| Objeto | Como obter | Notas |
+|---|---|---|
+| `VRay::Context` | `VRay::Context.active` | Contexto ligado ao modelo ativo. `context.scene`, `context.renderer`, `context.model`. **[doc][chaos-dev]** |
+| `VRay::Scene` | `VRay::Context.active.scene` | Coleção de plugins. `scene["/Nome"]` → plugin. **[doc]** |
+| `VRay::Scene::Plugin` | `scene["/SettingsOptions"]` | `plugin[:param]` lê, `plugin[:param] = v` escreve (dentro de `scene.change`). **[doc]** |
+| `VRay::VRayRenderer` | `context.renderer` ou `VRay::VRayRenderer.new` | Renderer; eventos via `subscribe`. **[chaos-dev]** |
+| `VRay::BatchExporter` | `VRay::BatchExporter.new(context: ctx)` | Exporta cenas (páginas) para `.vrscene`. **[chaos-dev]** "interno, pode mudar". |
+| `VRay::Command` | `VRay::Command.render_production(context: ctx)` | Dispara render de produção. **[chaos-dev]** |
+| `VRay::Color` | `VRay::Color.new(r, g, b)` | Floats 0..1. **[chaos-dev]** |
+| `VRay::Transform` | — | Existe na API (citado nas notas). **[a verificar]** assinatura. |
+
+**Legado (não usar):** `VRay::LiveScene` foi **removido no V-Ray 6** e a
+funcionalidade migrou para `VRay::Context` **[doc: release notes V-Ray 6]**.
+`VRay.get_render_param`, `LiveScene#get_plugin_json`, `VRayForSketchUp.*`
+(V3/V4) nunca foram API oficial **[chaos-dev]**. A API atual foi redesenhada no
+V-Ray 5 "para suporte de longo prazo" **[doc: release notes]**.
+
+## 3. Transações: `scene.change`
+
+Toda escrita em plugins deve acontecer dentro de `scene.change { ... }`.
+**[doc][chaos-dev]**
+
+```ruby
+scene = VRay::Context.active.scene
+scene.change do
+  scene["/SettingsOptions"][:quality_preset] = 4   # 0 Low … 5 High+, 6 Custom
+end
+```
+
+Operações estruturais também: `scene.change { scene.import(path) }`,
+`scene.change { plugin.duplicate(...) }`, `scene.change { scene.relink_files(depth: 9) }`.
+
+Após mudanças feitas por script que precisam aparecer na UI:
+`VRay.refresh_ui` (ou `VRay::refresh_ui`). **[chaos-dev]**
+
+No projeto: use `VRayBridge.change { |scene| ... }` e `VRayBridge.refresh_ui`
+(`src/me_vray_toolkit/vray/bridge.rb`).
+
+## 4. Nomes de plugins (hierarquia)
+
+- Nomes são caminhos absolutos: `/SettingsOptions`, `/SettingsCamera`,
+  `/SettingsOutput`, `/RenderView`, `/<nome do material>`. **[doc][chaos-dev]**
+- O material V-Ray de um material SketchUp chamado `blue wood` é `/blue wood`
+  (o `/` é obrigatório). **[comunidade]**
+- **Filhos devem ficar sob o pai**: `/Material/VRay Mtl`,
+  `/Material/VRay Mtl/Bitmap/Bitmap`. Criar `scene.create(:BRDFVRayMtl, '/vray')`
+  fora do namespace gera um material "quebrado" no Asset Editor; o certo é
+  `'/MyMaterialPlugin/vray'`. **[chaos-dev]**
+- Helper puro e testado: `VRayBridge::PluginPath` (`join`, `child`, `parent`, `for_material`).
+
+## 5. Receitas comprovadas
+
+### Configurações
+```ruby
+s = VRay::Context.active.scene
+s["/SettingsOptions"][:mtl_override_color]            # ler parâmetro [chaos-dev]
+s.change { s["/SettingsOptions"][:quality_preset] = 4 } # [doc]
+
+# Tipos de câmera fora da UI (esférica, cilíndrica, fisheye…) [chaos-dev]
+cam = s["/SettingsCamera"]
+s.change { cam[:type] = 3; cam[:fov] = 360.degrees; cam[:height] = 180 }
+VRay.refresh_ui
+
+# Clipping de câmera (distâncias em POLEGADAS) [chaos-dev; sintaxe LiveScene antiga → usar scene]
+s.change do
+  s["/RenderView"][:clipping] = true
+  s["/RenderView"][:clipping_near] = 1.m.to_f
+  s["/RenderView"][:clipping_far]  = 5.m.to_f
+end
+VRay.refresh_ui
+
+# Restaurar opções de "binding" de materiais [chaos-dev]
+s.change { s["/SettingsOptions"][:binding_support] = %w[bind_all_on bind_color_on bind_texture_on bind_texture_mode bind_opacity_on] }
+```
+
+### Iterar plugins e parâmetros
+```ruby
+scene.each { |plugin| puts "#{plugin.name} #{plugin.category}" }          # [comunidade]
+scene.grep(:MtlWrapper)                                                     # por tipo [chaos-dev, via renderer.grep]
+plugin.each { |name, value, _meta, is_file_path| ... }                      # Plugin#each rende 4 valores [chaos-dev]
+puts plugin.dump                                                            # depuração [chaos-dev]
+
+# Todos os caminhos de arquivo usados pela cena [chaos-dev]
+paths = scene.each.map { |p| p.each.select { |*, file| file }.map { |_, v, *| v } }
+             .flatten.uniq.reject(&:empty?)
+```
+
+### Materiais
+```ruby
+# Criar material (note o filho sob o pai) [chaos-dev]
+scene.change do
+  mtl = scene.create(:MtlSingleBRDF, '/MyMaterial')
+  mtl[:brdf] = scene.create(:BRDFVRayMtl, '/MyMaterial/VRay Mtl')
+end
+
+# Duplicar [chaos-dev — o exemplo da doc oficial estava errado]
+scene.change { scene["/Heather_Band"].duplicate(name: '/Foo', include_refs: true, family_only: true) }
+
+# Importar .vrmat (forma recomendada) [chaos-dev]
+scene.change { scene.import('C:/libs/brick.vrmat') }
+
+# Alterar em lote materiais com uma Tag do Asset Editor (V-Ray 6+) [chaos-dev]
+tagged = scene.each.select { |p| p[:ui_tags].include?('Tag1') }
+scene.change do
+  tagged.each do |t|
+    brdf = scene["#{t.name}/VRay Mtl"]
+    brdf[:reflect_glossiness_float] = 0.85
+    brdf[:reflect_color] = VRay::Color.new(0.95, 0.95, 0.95)
+  end
+end
+```
+Armadilha: após `duplicate`, o novo material **não aparece imediatamente** em
+`Sketchup.active_model.materials` (só "na segunda execução" no console). A
+sincronização V-Ray → SketchUp é assíncrona; devolva o controle ao loop do
+SketchUp (ex.: `UI.start_timer(0) { ... }`) antes de procurar o material.
+**[comunidade; a verificar]**
+
+UVW: `mtl[:brdf][:diffuse_tex][:uvwgen][:uvw_transform]` é leitura; mudar
+`Repeat U/V`/rotação por script não teve efeito relatado. Tamanho de textura
+é melhor controlado pelo tamanho do material SketchUp (V-Ray aplica por cima).
+**[chaos-dev; a verificar]**
+
+### Arquivos / caminhos
+```ruby
+s = VRay::Context.active.scene
+s.add_search_path('D:/Projetos/Biblioteca')   # só na sessão atual [chaos-dev]
+s.change { s.relink_files(depth: 9) }          # resolve texturas faltando
+```
+V-Ray guarda caminhos absolutos; se inválidos, tenta relativo ao `.skp` com
+busca em profundidade a partir da pasta do modelo. **[chaos-dev]**
+
+### Render e automação (batch)
+Não use `sleep`/loop ocupado esperando o render: o Ruby embarcado bloqueia o
+SketchUp inteiro, e o estado nunca muda enquanto seu código segura o thread
+principal. **[comunidade: DanRathbun, slbaumgartner]** Use eventos:
+
+```ruby
+# Assinante de eventos do contexto e do renderer [chaos-dev]
+class RenderListener
+  def on_model_exporter_created(exporter) = exporter.subscribe(self)
+  def on_model_exported(exporter)
+    renderer = exporter.renderer
+    # ajustar a cena exportada antes do render, ex.: trocar material do MtlWrapper,
+    # renderer.grep(:SettingsOutput).first[:img_file] = "C:/out/x.png"
+  end
+  def on_state_changed(renderer, old_state, new_state, instant)
+    # estados vistos: :idleStopped, :idleError, :idleFrameDone, :idleDone
+  end
+end
+ctx = VRay::Context.active
+listener = RenderListener.new
+ctx.subscribe(listener)
+ctx.renderer.subscribe(listener)
+VRay::Command.render_production(context: ctx)
+# ao final: ctx.unsubscribe(listener); ctx.renderer.unsubscribe(listener)
+```
+
+Renderizar vários `.skp` [chaos-dev, "usa classes internas"]:
+`VRay::BatchExporter.new(context:).export(dir)` → lista de `.vrscene`;
+depois `renderer = VRay::VRayRenderer.new; renderer.subscribe(self);
+renderer.clear!; renderer.load(vrscene); renderer.start` e, no estado final,
+`renderer.save_vfb_image(path, apply_color_corrections: true, single_channel: true)`.
+Entre modelos: `Sketchup.active_model&.close(true); VRay.pump_message;
+Sketchup.open_file(path, with_status: true)`.
+
+Exportar `.vrscene` do modelo atual: `context.renderer.export(path)` foi usado
+pela comunidade com resultado incompleto (11 KB) — **[a verificar]**; prefira
+`BatchExporter` ou o menu nativo até confirmar na doc instalada.
+
+Batch Render nativo: renderiza cada Página (Scene) do SketchUp; páginas com
+"Include in animation" desmarcado são puladas; saída em
+Asset Editor > Settings > Render Output > File Path. Só parâmetros de câmera
+variam por página. **[doc]**
+
+### Contexto e desempenho
+- Ativar o contexto (qualquer interação com V-Ray, inclusive renderizar)
+  instala *observers* do V-Ray no SketchUp; operações pesadas de modelagem
+  podem ficar ~5× mais lentas. Desative com
+  `VRay::Context.active(false)&.delete` antes de processamento pesado.
+  **[chaos-dev]** (`VRayBridge.deactivate`)
+- Não faça isso com o Asset Editor aberto (pode deixá-lo inconsistente). **[chaos-dev]**
+- Pilha de undo: o V-Ray serializa assets no modelo a cada mudança, gerando
+  entradas extras ("Undo V-Ray properties") e quebrando *redo*. Melhorou no
+  V-Ray Next update 2, mas não é perfeito. Envolva mudanças disparadas pelo
+  usuário em `model.start_operation`/`commit_operation`. **[chaos-dev]**
+- Erros Ruby do SketchUp aparecem também no V-Ray Log Window (V-Ray 5+). **[doc]**
+
+## 6. Versões e compatibilidade **[doc]**
+
+| SketchUp | V-Ray suportado |
+|---|---|
+| 2026 | V-Ray 7 update 2+ |
+| 2025 | V-Ray 7, 7.1, 7.2 |
+| 2024 | V-Ray 6.2.3, 7.x |
+| 2021–2023 | V-Ray 6.x, 7.x |
+
+- V-Ray 7: aba GPU única (CUDA/RTX), portal light legado, materiais PBR viram
+  VRayMtl, bump e coat embutidos no VRayMtl, "Binding" renomeado "Viewport
+  Display", modificador de Displacement por objeto.
+- V-Ray **não é forward-compatible**: abrir projeto em versão mais antiga oferece apagar os dados V-Ray.
+- Instalação V-Ray 7: `C:\Program Files\Chaos\V-Ray\V-Ray for SketchUp`
+  (antes do 7: `C:\Program Files\Chaos Group\...`); `.rb` do V-Ray são
+  criptografados (`require_crypt`); loader em `%ProgramData%\SketchUp\SketchUp <ano>\SketchUp\Plugins\vfs.rb`.
+
+## 7. Formatos de arquivo
+
+| Extensão | O que é |
+|---|---|
+| `.vrscene` | Cena V-Ray em texto (similar a JSON, `#include`, referências `nome::saida`). Formato do core. |
+| `.vropt` | Preset de settings (contém *user data*). Só settings desde V-Ray 5. |
+| `.vrmat` | Asset (material/proxy etc.) com arquivos referenciados; XML. |
+| `.vrmesh` | Proxy de geometria (carregado sob demanda). |
+| `.vrimg` | Saída do VFB com todos os render elements em float. |
+
+## 8. Conceitos do core úteis (AppSDK "Working with V-Ray Scenes")
+
+- Plugins top-level (luzes, `Node`), plugins de entrada (texturas, BRDFs,
+  UVWGens) e singletons de settings (`Settings*`, `RenderView`).
+- Material final sempre `MtlSingleBRDF` → `Node::material`; `BRDFVRayMtl` é o
+  BRDF principal (camadas reflexão → refração → difuso, energia conservada;
+  Fresnel desligado por padrão no core).
+- Texturas aceitam valor simples (polimorfismo); saídas alternativas via
+  `nome::saida` (ex.: `TexBitmap::out_alpha` → `opacity`).
+- `subdivs`: raios ∝ quadrado; recomenda-se deixar padrão.
+- Câmera padrão do core: +Y para cima, −Z direção de visão (SketchUp é Z-up; o
+  V-Ray for SketchUp converte).
+- Categorias de plugin: Bitmap, BSDF, GeometricObject, GeometrySource, Light,
+  Material, RenderChannel, RenderView, Settings, Texture*, UVWGen, Volumetric.
+
+## 9. Pendências para confirmar com o V-Ray instalado
+
+- [ ] Rodar `make vray-docs-import` e ler a API oficial inteira.
+- [ ] Assinaturas exatas: `Scene#create`, `#import`, `#each`, `#grep`,
+      `Plugin#duplicate`, `#dump`, `#each`, `VRayRenderer` (estados), `BatchExporter`.
+- [ ] Como obter a versão do V-Ray via API (hoje: Extension Manager).
+- [ ] Como aplicar um material V-Ray recém-criado a entidades SketchUp.
+- [ ] Mapa completo *user data* ↔ core para settings e VRayMtl (exportar `.vropt` / `.vrmat`).
+- [ ] Exportação `.vrscene` do modelo ativo sem BatchExporter.

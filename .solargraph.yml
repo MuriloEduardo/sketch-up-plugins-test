@@ -1,0 +1,9 @@
+include:
+  - "src/**/*.rb"
+  - "tests/**/*.rb"
+require_paths:
+  - src
+require:
+  - sketchup-api-stubs
+reporters:
+  - rubocop

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Executa Ruby no SketchUp aberto (via ponte de desenvolvimento) e imprime o
+# resultado em JSON. Requer `make su-loader` instalado e o SketchUp aberto.
+#
+# Uso:
+#   tools/sketchup/su-eval 'Sketchup.active_model.entities.size'
+#   tools/sketchup/su-eval -f script.rb
+#   echo 'puts VRay::Context.active.scene["/SettingsOptions"].dump' | tools/sketchup/su-eval -
+#
+# Variáveis: SU_EVAL_TIMEOUT (segundos, padrão 60), ME_DEVBRIDGE_DIR.
+# Código de saída: 0 ok, 1 exceção no SketchUp, 2 timeout (SketchUp fechado?).
+source "$(dirname "$0")/lib.sh"
+require_wsl
+
+case "${1:-}" in
+  "")   die "informe o código, -f <arquivo> ou - (stdin)." ;;
+  -f)   code="$(cat "${2:?arquivo}")" ;;
+  -)    code="$(cat)" ;;
+  *)    code="$1" ;;
+esac
+
+bridge="$(devbridge_dir)"
+[[ -d "$bridge/inbox" ]] || die "ponte não instalada ($bridge). Rode: make su-loader"
+
+id="$(date +%Y%m%d%H%M%S%N)-$$"
+printf '%s\n' "$code" > "$bridge/inbox/$id.rb.tmp"
+mv "$bridge/inbox/$id.rb.tmp" "$bridge/inbox/$id.rb"
+
+result="$bridge/outbox/$id.json"
+deadline=$((SECONDS + ${SU_EVAL_TIMEOUT:-60}))
+until [[ -f "$result" ]]; do
+  if (( SECONDS >= deadline )); then
+    rm -f "$bridge/inbox/$id.rb"
+    echo "timeout: o SketchUp não respondeu. Ele está aberto com o loader de dev?" >&2
+    exit 2
+  fi
+  sleep 0.2
+done
+
+cat "$result"
+echo
+ok="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["ok"])' "$result")"
+rm -f "$result"
+[[ "$ok" == "True" ]] || exit 1

@@ -1,0 +1,10 @@
+{
+  // Ruby LSP usa o `ruby` do PATH. Como a toolchain vive no Docker, os recursos
+  // de linguagem funcionam melhor abrindo o projeto no Dev Container
+  // (.devcontainer/). Depurar o SketchUp não depende disso: é attach via TCP.
+  "rubyLsp.rubyVersionManager": { "identifier": "none" },
+  "solargraph.diagnostics": true,
+  "files.eol": "\n",
+  "cSpell.language": "en,pt-BR",
+  "cSpell.words": ["RuboCop", "SketchUp", "Solargraph", "vrscene", "vropt", "vrmat", "vrmesh", "rbz", "TestUp", "userdata"]
+}

@@ -1,0 +1,62 @@
+plugins:
+  - rubocop-sketchup
+
+# Mesmo padrão de estilo usado nos projetos da própria SketchUp (mais relaxado
+# que o padrão do RuboCop).
+inherit_from: .rubocop/sketchup-style.yml
+
+AllCops:
+  NewCops: enable
+  CacheRootDirectory: .rubocop_cache
+  SuggestExtensions: false
+  DisplayCopNames: true
+  DisplayStyleGuide: true
+  ExtraDetails: true
+  TargetRubyVersion: 3.2 # SketchUp 2024+ usa Ruby 3.2.
+  Exclude:
+    - doc/**/*
+    - dist/**/*
+    - docs/**/*
+    - vendor/**/*
+    - src/*/vendor/**/*
+    - tools/sketchup/debug/**/* # Vendorizado do template oficial (MIT).
+  SketchUp:
+    SourcePath: src
+    TargetSketchUpVersion: 2024
+    Exclude:
+      - tests/**/*
+      - tools/**/*
+
+SketchupDeprecations:
+  Enabled: true
+
+SketchupPerformance:
+  Enabled: true
+
+SketchupRequirements:
+  Enabled: true
+
+SketchupSuggestions:
+  Enabled: true
+
+SketchupBugs:
+  Enabled: true
+
+# Ferramentas de desenvolvimento rodam fora do SketchUp ou só na máquina do
+# desenvolvedor; não são publicadas.
+SketchupRequirements/GlobalVariables:
+  Exclude:
+    - tools/**/*
+
+Style/Documentation:
+  Exclude:
+    - tests/**/*
+    - tools/**/*
+
+# TestUp exige a convenção TC_<Nome> para arquivos e classes de teste.
+Naming/FileName:
+  Exclude:
+    - tests/sketchup/**/*
+Naming/ClassAndModuleCamelCase:
+  Exclude:
+    - tests/sketchup/**/*

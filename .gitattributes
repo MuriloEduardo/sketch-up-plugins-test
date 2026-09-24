@@ -1,0 +1,12 @@
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.skp binary
+*.skm binary
+*.rbz binary
+*.vrmat text
+*.vropt text
+*.vrscene text
+*.png binary
+*.pdf binary
+*.exr binary

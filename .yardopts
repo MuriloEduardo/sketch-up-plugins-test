@@ -1,0 +1,7 @@
+--markup markdown
+--markup-provider commonmarker
+--output-dir doc
+src/**/*.rb
+-
+README.md
+docs/architecture.md

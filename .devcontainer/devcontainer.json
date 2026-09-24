@@ -1,0 +1,12 @@
+{
+  "name": "SketchUp + V-Ray toolchain",
+  "dockerComposeFile": ["../compose.yaml"],
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "overrideCommand": true,
+  "customizations": {
+    "vscode": {
+      "extensions": ["shopify.ruby-lsp", "castwide.solargraph", "editorconfig.editorconfig"]
+    }
+  }
+}

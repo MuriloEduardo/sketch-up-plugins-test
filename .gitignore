@@ -1,0 +1,32 @@
+# SketchUp
+*.skb
+*~.skp
+AutoSave_*.skp
+Backup of *.layout
+
+# V-Ray
+*.vrimg
+vfb_history/
+
+# Build
+/dist/
+*.rbz
+
+# Toolchain
+.rubocop_cache/
+.rubocop-https-*-yml
+.rubocop-remote-*.yml
+/.yardoc/
+/doc/
+/coverage/
+/.bundle/
+
+# Documentação de terceiros baixada por `make refdocs` (não versionar)
+/docs/reference/_cache/
+
+# Ponte de desenvolvimento / TestUp
+/.devbridge/
+/tests/sketchup/results/
+
+# Claude
+.claude/settings.local.json

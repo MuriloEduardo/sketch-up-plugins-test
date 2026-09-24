@@ -1,0 +1,47 @@
+# Toolchain em container. Uso normal é via Makefile (`make help`), mas tudo
+# funciona direto: `docker compose run --rm dev <comando>`.
+#
+# Serviços:
+#   dev      shell/comando arbitrário com a toolchain completa
+#   lint     RuboCop + regras RuboCop-SketchUp (Extension Warehouse)
+#   test     testes unitários (Minitest, lógica pura, fora do SketchUp)
+#   package  gera dist/<extensao>-<versao>.rbz
+#   docs     gera YARD em doc/
+#   refdocs  regenera a base de referência (docs/reference) — precisa de rede
+
+x-toolchain: &toolchain
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+  image: sketchup-vray-toolchain:latest
+  working_dir: /workspace
+  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+  volumes:
+    - .:/workspace
+  environment:
+    RUBOCOP_CACHE_ROOT: /workspace/.rubocop_cache
+
+services:
+  dev:
+    <<: *toolchain
+    command: bash
+
+  lint:
+    <<: *toolchain
+    command: bundle exec rubocop
+
+  test:
+    <<: *toolchain
+    command: ruby tools/build/run_unit_tests.rb
+
+  package:
+    <<: *toolchain
+    command: ruby tools/build/package.rb
+
+  docs:
+    <<: *toolchain
+    command: bundle exec yard doc
+
+  refdocs:
+    <<: *toolchain
+    command: bash tools/docs/refresh.sh
