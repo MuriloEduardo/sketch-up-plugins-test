@@ -3,22 +3,25 @@
 ## Topologia de desenvolvimento
 
 ```
-WSL (Ubuntu)                                   Windows
-───────────────────────────────                ─────────────────────────────────
-repositório (git)                              SketchUp 20xx + V-Ray 7
-  src/  ◄────── \\wsl.localhost\... ────────── Plugins/me_dev_loader.rb (make su-loader)
-  tools/sketchup/su-eval ── spool de arquivos ─► dev_bridge.rb (UI.start_timer)
-        (C:\Users\<u>\.me_devbridge\inbox|outbox)
-  tools/sketchup/launch.sh ── interop WSL ─────► SketchUp.exe [-RubyStartup debug]
-  tools/sketchup/testup-ci.sh ─────────────────► SketchUp.exe -RubyStartupArg TestUp:CI
+Este PC — WSL (Ubuntu)                    Desktop Windows 11 (rede local)
+────────────────────────────────          ──────────────────────────────────────
+repositório (git) + Claude Code           SketchUp Pro + V-Ray Pro
+tools/devbridge/su ──SSH (chave, :22)───► OpenSSH Server
+  túnel 127.0.0.1:17860 ────────────────► 127.0.0.1:7860  Dev Bridge (extensão dev)
+    /sync   src/, tests/sketchup/  ─────►   %APPDATA%\MuriloEduardoDev\workspace
+    /reload /eval /test /ping               ($LOAD_PATH → extensões em desenvolvimento)
+  scp (install-bridge, pull-vray-docs) ─►   Plugins\, doc da API V-Ray
 
-Docker (compose.yaml)
-  Ruby 3.2 = mesmo do SketchUp 2024–2026
-  make lint | test | package | docs | refdocs
+Docker (compose.yaml) — Ruby 3.2 = SketchUp 2024–2026
+  make lint | test | package | docs | refdocs     (também no GitHub Actions)
 ```
 
 - O SketchUp não roda em Linux/contêiner: toda execução real acontece no
-  Windows. O WSL controla o Windows via interop (`*.exe`, `/mnt/c`).
+  desktop. O código vai para lá por `sync` (sem precisar de commit).
+- A Dev Bridge executa Ruby num timer do thread principal do SketchUp (o
+  único lugar seguro para a API), uma requisição por vez. Escuta só em
+  loopback; o acesso remoto é o SSH com chave. Ver
+  `docs/remote-desktop-setup.md` (segurança) e `docs/decisions.md`.
 - A toolchain (RuboCop, Minitest, YARD, empacotamento) roda em Docker para
   ser reprodutível sem Ruby no host.
 
@@ -27,7 +30,7 @@ Docker (compose.yaml)
 | Camada | Depende de | Testado por |
 |---|---|---|
 | **Lógica pura** (ex.: `vray/quality_preset.rb`, `vray/plugin_path.rb`) | nada além de Ruby | Minitest no Docker (`make test`) |
-| **Bridges** (ex.: `vray/bridge.rb`) — único ponto que toca `::VRay` | SketchUp + V-Ray | TestUp no SketchUp (`make su-testup`) |
+| **Bridges** (ex.: `vray/bridge.rb`) — único ponto que toca `::VRay` | SketchUp + V-Ray | TestUp no SketchUp (`make su-test`) |
 | **Comandos/UI** (`main.rb`, futuros `ui/`, `tools/`) | SketchUp | TestUp + teste manual |
 
 Regras:
@@ -36,6 +39,13 @@ Regras:
   entre versões são corrigidas em um lugar.
 - Arquivos puros não chamam `Sketchup.require`; os testes carregam por caminho.
 - Um arquivo por classe/módulo; namespace `MuriloEduardo::VRayToolkit`.
+
+## Dev Bridge (`tools/devbridge/extension/`)
+
+Extensão separada, só de desenvolvimento, com o mesmo layout (lógica pura em
+`security`, `http`, `evaluator`, `config`, `workspace`, `routes`, `server`,
+testada no Docker, inclusive com TCP real; `main.rb` liga ao SketchUp).
+Empacotada à parte por `make dev-bridge-package`; `make package` só empacota `src/`.
 
 ## Novas extensões
 

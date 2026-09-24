@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# Empacota cada extensão de src/ em dist/<nome>-<versao>.rbz.
-# Uso: docker compose run --rm package   (ou `make package`)
+# Empacota cada extensão de uma pasta (padrão: src/) em dist/<nome>-<versao>.rbz.
+# Uso: docker compose run --rm package                 (ou `make package`)
+#      ruby tools/build/package.rb tools/devbridge/extension   (`make dev-bridge-package`)
 #
 # Estrutura exigida pelo Extension Warehouse: o .rbz (um .zip) contém
 # exatamente dois itens na raiz — o arquivo de registro <nome>.rb e a pasta de
@@ -12,7 +13,7 @@ require 'fileutils'
 require 'zip'
 
 ROOT = File.expand_path('../..', __dir__)
-SOURCE = File.join(ROOT, 'src')
+SOURCE = File.expand_path(ARGV[0] || 'src', ROOT)
 DIST = File.join(ROOT, 'dist')
 VERSION_PATTERN = /EXTENSION\.version\s*=\s*['"]([^'"]+)['"]/
 
@@ -28,7 +29,7 @@ end
 def package(registration_file)
   name = File.basename(registration_file, '.rb')
   support_folder = File.join(SOURCE, name)
-  abort("Pasta de suporte ausente: src/#{name}/") unless File.directory?(support_folder)
+  abort("Pasta de suporte ausente: #{support_folder}") unless File.directory?(support_folder)
 
   version = extension_version(registration_file)
   FileUtils.mkdir_p(DIST)
@@ -49,5 +50,5 @@ def package(registration_file)
 end
 
 registration_files = Dir.glob(File.join(SOURCE, '*.rb'))
-abort('Nenhum arquivo de registro em src/*.rb') if registration_files.empty?
+abort("Nenhum arquivo de registro em #{SOURCE}/*.rb") if registration_files.empty?
 registration_files.each { |file| package(file) }

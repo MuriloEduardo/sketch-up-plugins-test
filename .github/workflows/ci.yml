@@ -34,6 +34,9 @@ jobs:
       - name: Package .rbz
         run: make package
 
+      - name: Package Dev Bridge .rbz (development only)
+        run: make dev-bridge-package
+
       - name: Upload .rbz
         uses: actions/upload-artifact@v7
         with:

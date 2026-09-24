@@ -24,9 +24,10 @@ vfb_history/
 # Documentação de terceiros baixada por `make refdocs` (não versionar)
 /docs/reference/_cache/
 
-# Ponte de desenvolvimento / TestUp
-/.devbridge/
+# Dev Bridge (conexão com token) / TestUp
+.devbridge.env
 /tests/sketchup/results/
 
 # Claude
 .claude/settings.local.json
+__pycache__/

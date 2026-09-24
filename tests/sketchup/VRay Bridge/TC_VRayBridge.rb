@@ -8,7 +8,7 @@ module MuriloEduardo
   module VRayToolkit
     module Tests
 
-      # Runs inside SketchUp via TestUp (`make su-testup`).
+      # Runs inside SketchUp via TestUp (`make su-test`).
       class TC_VRayBridge < TestUp::TestCase
 
         def setup

@@ -23,10 +23,23 @@ fazer só se o usuário pedir (ex.: nome de empresa).
 A API do V-Ray mudou entre V3→V4→V5 (redesenho) →V6 (remoção do LiveScene).
 Centralizar isola mudanças futuras e facilita testes.
 
-### 2026-09-24 — Ponte de desenvolvimento por spool de arquivos (não HTTP)
+### 2026-09-24 — (SUBSTITUÍDA) Ponte de desenvolvimento por spool de arquivos (não HTTP)
 Motivo: no WSL2 com NAT, `127.0.0.1` do WSL não é o do Windows. Arquivos em
 `C:\Users\<u>\.me_devbridge` funcionam em qualquer modo de rede e não abrem
 porta. Execução arbitrária de código: apenas via loader de dev, nunca no `.rbz`.
+
+### 2026-09-24 — SketchUp num desktop separado; Dev Bridge via túnel SSH
+Substitui a ponte por spool. O usuário não quer SketchUp/V-Ray na máquina de
+desenvolvimento; usa um desktop Windows 11 da rede local. O free tier da AWS
+foi descartado (sem GPU, RAM insuficiente). A Dev Bridge (extensão só de
+desenvolvimento) é um servidor HTTP mínimo dentro do SketchUp que executa
+Ruby: por ser execução remota de código, foi escolhido (pelo usuário, entre
+HTTP na LAN com token, túnel SSH e nenhuma execução remota) o modelo:
+bind fixo em 127.0.0.1, rejeição de conexões não locais, token de 48 hex,
+desligada por padrão, acesso remoto só por OpenSSH com chave (senha
+desligada, firewall só em rede Privada). O token é lido pelo cliente via SSH
+(quem tem SSH já tem controle da máquina, então a ponte não amplia o risco).
+Código vai por `/sync` (sem commit) para `%APPDATA%\MuriloEduardoDev\workspace`.
 
 ### 2026-09-24 — Docs de terceiros fora do git
 Páginas da Chaos, fóruns e artigos ficam em `docs/reference/_cache/`

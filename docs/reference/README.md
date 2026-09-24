@@ -15,7 +15,7 @@ Como achar a resposta certa, na ordem:
    `_cache/chaos/APPSDK/` (111 páginas; comece por `132780815.md`
    "Working with V-Ray Scenes").
 7. **Casos reais / armadilhas** → `_cache/forums/*.md`.
-8. **Ainda não achou** → rode no SketchUp real: `make su-eval CODE='...'`
+8. **Ainda não achou** → rode no SketchUp do desktop: `make su-eval CODE='...'`
    (ex.: `VRay::Context.active.scene["/SettingsOptions"].dump`,
    `VRay.methods - Object.methods`, `VRay::Scene.instance_methods(false)`).
 
@@ -29,8 +29,8 @@ Como achar a resposta certa, na ordem:
 | ruby.sketchup.com (via SketchUp/ruby-api-stubs 0.7.11, MIT) | API Ruby + LayOut completas, guias, release notes até 2026.1 | `sketchup-api-index.md`, `_cache/sketchup-api-stubs/`, `_cache/sketchup-api-guides/` |
 | developer.sketchup.com | 21 artigos (unidades, travessia, segurança, eval, rescue, UX, parametric…) | `_cache/devcenter/` |
 | extensions.sketchup.com/developers/sketchup_c_api | C API / SDK (visão geral, estruturas) | `_cache/sketchup-c-api/` |
-| github.com/SketchUp/sketchup-extension-vscode-project | Template oficial: rules, skills, debug bootstrap | `.claude/rules`, `.claude/skills`, `tools/sketchup/debug/` |
-| github.com/SketchUp/testup-2, rubocop-sketchup, sketchup-ruby-api-tutorials | Testes, lint, exemplos | `tools/sketchup/testup-ci.sh`, `.rubocop*` |
+| github.com/SketchUp/sketchup-extension-vscode-project | Template oficial: rules, skills, debug bootstrap | `.claude/rules`, `.claude/skills`, `tools/debug/` |
+| github.com/SketchUp/testup-2, rubocop-sketchup, sketchup-ruby-api-tutorials | Testes, lint, exemplos | `tools/devbridge/` (TestUp remoto), `.rubocop*` |
 | documentation.chaos.com/space/VSKETCHUP | 294 páginas V-Ray for SketchUp (inclui "V-Ray Script Access") | `_cache/chaos/VSKETCHUP/` |
 | documentation.chaos.com/space/APPSDK | 111 páginas V-Ray App SDK | `_cache/chaos/APPSDK/` |
 | docs.chaos.com/vray_app_sdk/doc/python/plugins.html | Todos os plugins e parâmetros do core | `_cache/vray-plugins.md` |

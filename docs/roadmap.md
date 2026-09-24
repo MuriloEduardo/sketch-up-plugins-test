@@ -41,9 +41,9 @@ Validar tudo que hoje está "a verificar" com SketchUp + V-Ray reais.
 
 | # | Item | Status |
 |---|---|---|
-| F1.1 | Instalar SketchUp 2026 + V-Ray 7 no Windows; `make su-loader`; `make su-ping` | ideia |
+| F1.1 | Desktop: OpenSSH + Dev Bridge (`docs/remote-desktop-setup.md`); `make su-ping` ok | em andamento |
 | F1.2 | `make vray-docs-import` e revisar `docs/reference/vray-ruby-api.md` contra a doc oficial | ideia |
-| F1.3 | Instalar TestUp 2 e rodar `make su-testup` (VRayBridge) | ideia |
+| F1.3 | Instalar TestUp 2 no desktop e rodar `make su-test` (VRayBridge) | ideia |
 | F1.4 | Mapear *user data* ↔ core (exportar `.vropt`/`.vrmat`) para settings e VRayMtl | ideia |
 | F1.5 | Núcleo de travessia do modelo (transformação, visibilidade, herança de material, PID) testado | ideia |
 | F1.6 | Motor de eventos de render (subscriber, fila, estados, timeouts) sem bloquear a UI | ideia |
@@ -114,6 +114,7 @@ Concorrência forte; diferenciar por personalização e integração.
 |---|---|
 | CI remoto (GitHub Actions: lint, testes, `.rbz` como artefato) — `.github/workflows/ci.yml` | publicado |
 | Hook de pre-commit com `make check` | ideia |
-| Anotações via Text tool como "ponteiro" para o agente (ideia do Claude Bridge) na ponte de dev | ideia |
+| Anotações via Text tool como "ponteiro" para o agente (ideia do Claude Bridge) na Dev Bridge | ideia |
+| Depuração com breakpoints remota (DAP 7150 por túnel SSH + mapeamento de caminhos) | ideia |
 | Script de assinatura/criptografia (Extension Signing Portal) para distribuição fora do EW | ideia |
 | Perfilamento (SpeedUp da SketchUp) para operações pesadas | ideia |

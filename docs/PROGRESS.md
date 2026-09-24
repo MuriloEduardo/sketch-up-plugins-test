@@ -2,6 +2,29 @@
 
 Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 
+## 2026-09-24 — SketchUp no desktop da rede + Dev Bridge via SSH
+
+Feito:
+- Decisão: SketchUp Pro + V-Ray Pro rodam no desktop Windows 11 da rede local
+  (não na máquina de dev; AWS free tier descartado). Ver `docs/decisions.md`.
+- Dev Bridge (`tools/devbridge/extension/`): extensão só de dev, HTTP mínimo
+  em 127.0.0.1 dentro do SketchUp (timer no thread principal), token, desligada
+  por padrão; rotas ping/eval/sync/reload/test. Ponte por arquivos removida.
+- Cliente `tools/devbridge/su` (python3 + ssh do WSL): túnel SSH persistente,
+  token lido via SSH, sync sem commit, TestUp remoto, install-bridge e
+  pull-vray-docs por scp. Alvos `make su-*`.
+- `tools/devbridge/windows/setup-openssh.ps1` + guia `docs/remote-desktop-setup.md`.
+- 54 testes unitários (inclui servidor com TCP real); cliente validado ponta a
+  ponta contra SketchUp simulado em container (ping, eval, sync, reload com
+  erro → 500, test com formato real do TestUp, códigos de saída).
+
+NÃO verificado (depende do desktop):
+- Script do OpenSSH, túnel, `scp` com espaços no caminho ("SketchUp 2026"),
+  comandos `cmd.exe` remotos, Dev Bridge dentro do SketchUp real, TestUp real.
+
+Próximos passos (usuário, no desktop): seguir `docs/remote-desktop-setup.md`
+até `make su-ping` responder; depois `make vray-docs-import` e `make su-test`.
+
 ## 2026-09-24 — Repositório remoto e CI
 
 - Remoto: git@github.com:MuriloEduardo/sketch-up-plugins-test.git (branch `master`,
@@ -20,18 +43,8 @@ Feito:
 - Toolchain Docker/Compose + Makefile; `make check` verde (lint sem ofensas,
   14 testes); `make package` gera `dist/me_vray_toolkit-0.1.0.rbz`.
 - Extensão mínima `V-Ray Toolkit` (Status, Render Quality) + `VRayBridge`.
-- Ponte de desenvolvimento por spool de arquivos, validada com SketchUp
-  simulado (resultado, stdout, exceções, bindings isolados).
+- Ponte de desenvolvimento por spool de arquivos (substituída depois pela Dev Bridge via SSH).
 - Base de referência (`docs/reference/`) e roadmap comercial.
 
 NÃO verificado (máquina sem SketchUp/V-Ray instalados):
-- Loader de dev, launcher, TestUp CI e debugger contra um SketchUp real.
 - Comandos da extensão e `VRayBridge` contra V-Ray real.
-- Acesso do Ruby do Windows ao repositório via `\\wsl.localhost\...`.
-
-Próximos passos (roadmap Fase 1):
-1. Instalar SketchUp 2026 + V-Ray 7 no Windows (usuário).
-2. `make su-loader`, `make su-launch`, `make su-ping`.
-3. `make vray-docs-import` e revisar `docs/reference/vray-ruby-api.md`.
-4. TestUp 2 + `make su-testup`.
-5. Escolher o primeiro produto (sugestão: V-Ray Batch Studio, P1.1 variações de material).

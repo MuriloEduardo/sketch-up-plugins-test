@@ -166,6 +166,6 @@ via extensão Ruby C. Útil para gerar `.skp` em servidor. Resumo em
 
 - TestUp 2 (Minitest dentro do SketchUp; modo CI por linha de comando).
 - ruby/debug via DAP (SketchUp 2024+), bootstrap do template oficial em
-  `tools/sketchup/debug/`.
+  `tools/debug/`.
 - sketchup-api-stubs (IntelliSense/Solargraph), RuboCop-SketchUp.
 - Issue tracker oficial: github.com/SketchUp/api-issue-tracker.

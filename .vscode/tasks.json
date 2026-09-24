@@ -3,16 +3,7 @@
   "tasks": [
     { "label": "check (lint + test)", "type": "shell", "command": "make check", "group": { "kind": "test", "isDefault": true }, "problemMatcher": [] },
     { "label": "package .rbz", "type": "shell", "command": "make package", "group": "build", "problemMatcher": [] },
-    {
-      // Abre o SketchUp do Windows com o debugger (porta 7150). Depois use
-      // "Attach to SketchUp". Veja docs/workflow.md.
-      "label": "Launch SketchUp for debugging",
-      "type": "shell",
-      "command": "make su-debug SU_YEAR=${input:sketchupVersion}",
-      "problemMatcher": []
-    }
-  ],
-  "inputs": [
-    { "id": "sketchupVersion", "type": "pickString", "description": "SketchUp", "options": ["2026", "2025", "2024"], "default": "2026" }
+    { "label": "SketchUp: sync + reload (desktop)", "type": "shell", "command": "make su-reload", "problemMatcher": [] },
+    { "label": "SketchUp: TestUp (desktop)", "type": "shell", "command": "make su-test", "problemMatcher": [] }
   ]
 }

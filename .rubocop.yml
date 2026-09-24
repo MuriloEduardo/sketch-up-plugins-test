@@ -19,7 +19,7 @@ AllCops:
     - docs/**/*
     - vendor/**/*
     - src/*/vendor/**/*
-    - tools/sketchup/debug/**/* # Vendorizado do template oficial (MIT).
+    - tools/debug/**/* # Vendorizado do template oficial (MIT).
   SketchUp:
     SourcePath: src
     TargetSketchUpVersion: 2024

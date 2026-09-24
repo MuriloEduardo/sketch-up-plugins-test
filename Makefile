@@ -1,6 +1,6 @@
 # Atalhos para a toolchain em Docker. `make help` lista os alvos.
 # Tudo que envolve Ruby roda no container; os alvos `su-*` falam com o
-# SketchUp do Windows via interop do WSL (ver docs/workflow.md).
+# SketchUp do desktop Windows via Dev Bridge + túnel SSH (docs/remote-desktop-setup.md).
 
 export HOST_UID := $(shell id -u)
 export HOST_GID := $(shell id -g)
@@ -10,8 +10,9 @@ RUN     := $(COMPOSE) run --rm
 SU_YEAR ?= 2026
 
 .DEFAULT_GOAL := help
-.PHONY: help build shell lint lint-fix test check package docs refdocs \
-        lock clean su-launch su-debug su-loader su-eval su-ping su-testup vray-docs-import
+.PHONY: help build shell lint lint-fix test check package docs refdocs lock clean \
+        dev-bridge-package su-connect su-install-bridge su-ping su-sync su-reload \
+        su-eval su-test su-tunnel-stop vray-docs-import
 
 help: ## Lista os alvos disponíveis
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -50,25 +51,37 @@ lock: ## Atualiza Gemfile.lock dentro do container
 clean: ## Remove artefatos gerados
 	rm -rf dist doc .yardoc .rubocop_cache
 
-## --- SketchUp no Windows (via WSL interop) --------------------------------
+## --- SketchUp no desktop Windows (Dev Bridge via túnel SSH) --------------
+# Guia: docs/remote-desktop-setup.md. Cliente: tools/devbridge/su (python3 do WSL).
 
-su-loader: ## Instala o loader de desenvolvimento no Plugins do SketchUp (SU_YEAR=2026)
-	bash tools/sketchup/install-dev-loader.sh $(SU_YEAR)
+SU := python3 tools/devbridge/su
 
-su-launch: ## Abre o SketchUp (SU_YEAR=2026)
-	bash tools/sketchup/launch.sh $(SU_YEAR)
+dev-bridge-package: ## Gera dist/me_dev_bridge-*.rbz (extensão SÓ de desenvolvimento)
+	$(RUN) dev ruby tools/build/package.rb tools/devbridge/extension
 
-su-debug: ## Abre o SketchUp com o debugger na porta 7150
-	bash tools/sketchup/launch.sh $(SU_YEAR) --debug
+su-connect: ## Configura o SSH do desktop: make su-connect SSH=usuario@ip [KEY=~/.ssh/id] [PORT=7860]
+	$(SU) connect --ssh '$(SSH)' $(if $(PORT),--port $(PORT)) $(if $(KEY),--key '$(KEY)') $(if $(TOKEN),--token '$(TOKEN)')
 
-su-ping: ## Verifica se a ponte de desenvolvimento está respondendo
-	bash tools/sketchup/su-eval 'Sketchup.version'
+su-install-bridge: ## Copia a Dev Bridge para o Plugins do SketchUp no desktop (SU_YEAR=2026)
+	$(SU) install-bridge $(SU_YEAR)
 
-su-eval: ## Executa Ruby no SketchUp aberto: make su-eval CODE='Sketchup.active_model.title'
-	bash tools/sketchup/su-eval '$(CODE)'
+su-ping: ## Testa a conexão com o SketchUp do desktop
+	$(SU) ping
 
-su-testup: ## Roda tests/sketchup via TestUp CI (SketchUp fecha ao final)
-	bash tools/sketchup/testup-ci.sh $(SU_YEAR)
+su-sync: ## Envia src/ e tests/sketchup/ para o desktop
+	$(SU) sync
 
-vray-docs-import: ## Importa a doc da API Ruby do V-Ray instalada no Windows
-	bash tools/docs/import-vray-docs.sh
+su-reload: su-sync ## Envia e recarrega as extensões no SketchUp
+	$(SU) reload
+
+su-eval: ## Executa Ruby no SketchUp: make su-eval CODE='Sketchup.active_model.title'
+	$(SU) eval '$(CODE)'
+
+su-test: su-sync ## Roda tests/sketchup com TestUp no desktop [FILTER=TC_Nome#]
+	$(SU) test $(FILTER)
+
+su-tunnel-stop: ## Fecha o túnel SSH
+	$(SU) tunnel-stop
+
+vray-docs-import: ## Baixa do desktop a doc oficial da API Ruby do V-Ray
+	$(SU) pull-vray-docs

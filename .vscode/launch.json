@@ -3,9 +3,9 @@
   "configurations": [
     {
       // Debug gem (ruby/debug) embarcado no SketchUp 2024+, via DAP.
-      // Porta sincronizada com tools/sketchup/launch.sh (7150, não 7000).
-      // Do WSL, o Windows é alcançável pelo IP do host; em modo de rede
-      // "mirrored" do WSL, 127.0.0.1 funciona direto.
+      // EXPERIMENTAL / não configurado: depuração remota exige túnel SSH da
+      // porta 7150 do desktop e mapeamento de caminhos (backlog técnico,
+      // docs/workflow.md). Bootstrap: tools/debug/su_debug_bootstrap.rb.
       "name": "Attach to SketchUp",
       "type": "ruby_lsp",
       "request": "attach",

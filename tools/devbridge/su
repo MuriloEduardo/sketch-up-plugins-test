@@ -1,0 +1,280 @@
+#!/usr/bin/env python3
+"""Cliente da Dev Bridge: fala com o SketchUp do desktop Windows via túnel SSH.
+
+A ponte escuta só em 127.0.0.1 no desktop. Este cliente mantém um túnel SSH
+persistente (ControlMaster) e envia requisições HTTP autenticadas por token.
+
+Uso (normalmente via Makefile):
+  su connect --ssh usuario@192.168.0.10 [--key ~/.ssh/id] [--port 7860]
+  su ping
+  su eval 'Sketchup.active_model.title'      |  su eval -f script.rb  |  echo code | su eval -
+  su eval --json 'Sketchup.active_model.materials.map(&:name)'
+  su sync                 envia src/ e tests/ para o workspace do desktop
+  su reload               registra extensões novas e recarrega a implementação
+  su test [FILTRO]        roda tests/sketchup com TestUp (ex.: TC_VRayBridge#)
+  su install-bridge ANO   copia a extensão Dev Bridge para o Plugins do desktop
+  su pull-vray-docs       baixa a doc oficial da API Ruby do V-Ray instalada
+  su tunnel-stop          encerra o túnel
+
+Configuração: .devbridge.env na raiz do repositório (fora do git).
+Saída: 0 ok, 1 erro reportado pelo SketchUp, 2 sem conexão/configuração.
+"""
+import argparse
+import base64
+import json
+import os
+import pathlib
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+
+REPO = pathlib.Path(__file__).resolve().parents[2]
+ENV_FILE = REPO / ".devbridge.env"
+SYNC_ROOTS = ["src", "tests/sketchup"]
+SYNC_EXCLUDE = {"results", "test-results", "__pycache__"}
+BRIDGE_SOURCE = REPO / "tools" / "devbridge" / "extension"
+VRAY_DOC_DIRS = [
+    "C:/Program Files/Chaos/V-Ray/V-Ray for SketchUp/extension/documentation",
+    "C:/Program Files/Chaos Group/V-Ray/V-Ray for SketchUp/extension/documentation",
+]
+DEFAULT_REMOTE_PORT = 7860
+LOCAL_PORT_OFFSET = 10000  # túnel local em 17860 por padrão
+
+
+def fail(message, code=2):
+    print(f"erro: {message}", file=sys.stderr)
+    sys.exit(code)
+
+
+def read_env():
+    if not ENV_FILE.exists():
+        fail("sem configuração. Rode: make su-connect SSH=usuario@ip (veja docs/remote-desktop-setup.md)")
+    values = {}
+    for line in ENV_FILE.read_text().splitlines():
+        if "=" in line and not line.lstrip().startswith("#"):
+            key, value = line.split("=", 1)
+            values[key.strip()] = value.strip()
+    return values
+
+
+def write_env(values):
+    lines = ["# Gerado por tools/devbridge/su — NÃO versionar (contém token)."]
+    lines += [f"{key}={value}" for key, value in values.items()]
+    ENV_FILE.write_text("\n".join(lines) + "\n")
+    ENV_FILE.chmod(0o600)
+
+
+def load_env():
+    """Configuração com token; busca o token no desktop via SSH se faltar."""
+    env = read_env()
+    if not env.get("SU_TOKEN"):
+        code, output, stderr = ssh_run(env, 'type "%APPDATA%\\MuriloEduardoDev\\config.json"')
+        if code != 0:
+            fail("token não encontrado no desktop. A Dev Bridge já foi instalada e o SketchUp aberto uma vez? "
+                 f"({stderr.strip() or output.strip()})")
+        env["SU_TOKEN"] = json.loads(output)["token"]
+        write_env(env)
+    return env
+
+
+def control_socket(env):
+    return str(pathlib.Path.home() / ".ssh" / f"devbridge-{env['SU_SSH'].replace('@', '_')}.sock")
+
+
+def ssh_base(env):
+    options = ["-o", "BatchMode=yes", "-o", "ExitOnForwardFailure=yes", "-o", "ServerAliveInterval=30"]
+    if env.get("SU_SSH_KEY"):
+        options += ["-i", os.path.expanduser(env["SU_SSH_KEY"]), "-o", "IdentitiesOnly=yes"]
+    return options
+
+
+def ensure_tunnel(env):
+    if os.environ.get("SU_DIRECT") == "1":  # só para testes locais sem SSH
+        return
+    socket = control_socket(env)
+    check = subprocess.run(["ssh", "-S", socket, "-O", "check", env["SU_SSH"]], capture_output=True)
+    if check.returncode == 0:
+        return
+    local, remote = env["SU_LOCAL_PORT"], env["SU_PORT"]
+    command = ["ssh", *ssh_base(env), "-M", "-S", socket, "-o", "ControlPersist=2h", "-f", "-N",
+               "-L", f"127.0.0.1:{local}:127.0.0.1:{remote}", env["SU_SSH"]]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        fail(f"não foi possível abrir o túnel SSH para {env['SU_SSH']}:\n{result.stderr.strip()}")
+
+
+def request(env, method, path, body=b"", headers=None, timeout=120):
+    ensure_tunnel(env)
+    url = f"http://127.0.0.1:{env['SU_LOCAL_PORT']}{path}"
+    all_headers = {"X-Dev-Token": env["SU_TOKEN"], **(headers or {})}
+    req = urllib.request.Request(url, data=body if method == "POST" else None, headers=all_headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        payload = error.read().decode("utf-8", "replace")
+        fail(f"HTTP {error.code}: {payload}", 1 if error.code < 500 else 2)
+    except (urllib.error.URLError, ConnectionError, TimeoutError) as error:
+        fail(f"a ponte não respondeu ({error}). O SketchUp está aberto e a Dev Bridge ligada "
+             "(Extensions › Dev Bridge › Start)?")
+
+
+def emit(result):
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    sys.exit(0 if result.get("ok") else 1)
+
+
+def collect_files():
+    files = {}
+    for root in SYNC_ROOTS:
+        base = REPO / root
+        if not base.exists():
+            continue
+        for path in sorted(base.rglob("*")):
+            relative = path.relative_to(REPO)
+            if path.is_file() and not SYNC_EXCLUDE.intersection(relative.parts):
+                files[relative.as_posix()] = base64.b64encode(path.read_bytes()).decode("ascii")
+    return files
+
+
+def scp(env, sources, target, recursive=False):
+    command = ["scp", *ssh_base(env), *(["-r"] if recursive else []), *sources, target]
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        fail(f"scp falhou:\n{result.stderr.strip()}")
+
+
+def ssh_run(env, remote_command):
+    result = subprocess.run(["ssh", *ssh_base(env), env["SU_SSH"], remote_command], capture_output=True, text=True)
+    return result.returncode, result.stdout, result.stderr
+
+
+def cmd_connect(args):
+    remote_port = args.port or DEFAULT_REMOTE_PORT
+    values = {"SU_SSH": args.ssh, "SU_PORT": remote_port, "SU_LOCAL_PORT": remote_port + LOCAL_PORT_OFFSET}
+    if args.key:
+        values["SU_SSH_KEY"] = args.key
+    if args.token:
+        values["SU_TOKEN"] = args.token
+    write_env(values)
+    code, output, stderr = ssh_run(read_env(), "echo ok")
+    if code != 0:
+        fail(f"SSH para {args.ssh} falhou: {stderr.strip()}\nVeja docs/remote-desktop-setup.md.")
+    print(f"SSH ok. Configuração salva em {ENV_FILE.name}.")
+    print("Próximo: make su-install-bridge (primeira vez) ou make su-ping.")
+
+
+def cmd_eval(args):
+    env = load_env()
+    if args.file:
+        code = pathlib.Path(args.file).read_text()
+    elif args.code == "-":
+        code = sys.stdin.read()
+    elif args.code:
+        code = args.code
+    else:
+        fail("informe o código, -f arquivo ou - (stdin)")
+    headers = {"X-Result-Format": "json"} if args.json else {}
+    emit(request(env, "POST", "/eval", code.encode("utf-8"), headers, timeout=args.timeout))
+
+
+def cmd_sync(_args):
+    env = load_env()
+    files = collect_files()
+    payload = json.dumps({"files": files, "prune": True}).encode("utf-8")
+    emit(request(env, "POST", "/sync", payload, {"Content-Type": "application/json"}))
+
+
+def cmd_test(args):
+    env = load_env()
+    body = json.dumps({"filter": args.filter} if args.filter else {}).encode("utf-8")
+    result = request(env, "POST", "/test", body, {"Content-Type": "application/json"}, timeout=1800)
+    if not result.get("ok"):
+        emit(result)
+    # Formato do TestUp::CIJsonReporter: status, statistics, fails[].
+    report = result.get("report") or {}
+    statistics = report.get("statistics", {})
+    print(json.dumps({"status": report.get("status", {}).get("code"), "statistics": statistics,
+                      "output": result.get("output")}, indent=2, ensure_ascii=False))
+    for failure in report.get("fails", []):
+        print(f"{failure.get('type', 'failed').upper()}: {failure.get('class')}#{failure.get('name')} "
+              f"@ {failure.get('location')}\n    {failure.get('message')}")
+    sys.exit(1 if statistics.get("failures") or statistics.get("errors") else 0)
+
+
+def cmd_install_bridge(args):
+    env = read_env()  # não precisa de token: a ponte ainda não existe
+    code, appdata, stderr = ssh_run(env, "echo %APPDATA%")
+    if code != 0:
+        fail(f"ssh falhou: {stderr.strip()}")
+    plugins = f"{appdata.strip()}\\SketchUp\\SketchUp {args.year}\\SketchUp\\Plugins".replace("\\", "/")
+    code, _, stderr = ssh_run(env, f'if not exist "{plugins}" exit 3')
+    if code != 0:
+        fail(f"pasta Plugins não encontrada no desktop: {plugins} (abra o SketchUp {args.year} uma vez).")
+    scp(env, [str(BRIDGE_SOURCE / "me_dev_bridge.rb"), str(BRIDGE_SOURCE / "me_dev_bridge")],
+        f"{env['SU_SSH']}:\"{plugins}/\"", recursive=True)
+    print(f"Dev Bridge instalada em {plugins}. Reinicie o SketchUp e use Extensions › Dev Bridge › Start.")
+
+
+def cmd_pull_vray_docs(_args):
+    env = read_env()
+    target = REPO / "docs" / "reference" / "_cache" / "vray-ruby-api-installed"
+    for source in VRAY_DOC_DIRS:
+        code, _, _ = ssh_run(env, f'if not exist "{source}/_index.html" exit 3')
+        if code == 0:
+            target.mkdir(parents=True, exist_ok=True)
+            scp(env, [f"{env['SU_SSH']}:\"{source}/*\""], str(target), recursive=True)
+            subprocess.run([sys.executable, str(REPO / "tools" / "docs" / "html_to_text.py"), str(target)],
+                           stdout=open(f"{target}.txt", "w"), check=True)
+            print(f"Doc importada de {source}\nTexto para busca: {target}.txt")
+            return
+    fail("documentação do V-Ray não encontrada no desktop (V-Ray for SketchUp instalado?).")
+
+
+def cmd_tunnel_stop(_args):
+    env = load_env()
+    subprocess.run(["ssh", "-S", control_socket(env), "-O", "exit", env["SU_SSH"]])
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="su", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    connect = commands.add_parser("connect")
+    connect.add_argument("--ssh", required=True, help="usuario@ip do desktop Windows")
+    connect.add_argument("--token", help="opcional: por padrão é lido do desktop via SSH")
+    connect.add_argument("--port", type=int)
+    connect.add_argument("--key", help="chave SSH privada (ex.: ~/.ssh/id_ed25519_sketchup)")
+    connect.set_defaults(handler=cmd_connect)
+
+    commands.add_parser("ping").set_defaults(handler=lambda _a: emit(request(load_env(), "GET", "/ping")))
+
+    evaluate = commands.add_parser("eval")
+    evaluate.add_argument("code", nargs="?")
+    evaluate.add_argument("-f", "--file")
+    evaluate.add_argument("--json", action="store_true", help="retorna o valor em JSON em vez de #inspect")
+    evaluate.add_argument("--timeout", type=int, default=120)
+    evaluate.set_defaults(handler=cmd_eval)
+
+    commands.add_parser("sync").set_defaults(handler=cmd_sync)
+    commands.add_parser("reload").set_defaults(handler=lambda _a: emit(request(load_env(), "POST", "/reload")))
+
+    test = commands.add_parser("test")
+    test.add_argument("filter", nargs="?")
+    test.set_defaults(handler=cmd_test)
+
+    install = commands.add_parser("install-bridge")
+    install.add_argument("year", nargs="?", default="2026")
+    install.set_defaults(handler=cmd_install_bridge)
+
+    commands.add_parser("pull-vray-docs").set_defaults(handler=cmd_pull_vray_docs)
+    commands.add_parser("tunnel-stop").set_defaults(handler=cmd_tunnel_stop)
+
+    args = parser.parse_args()
+    args.handler(args)
+
+
+if __name__ == "__main__":
+    main()

@@ -28,16 +28,19 @@ make test          # só testes unitários (tests/unit, fora do SketchUp)
 make lint-fix      # autocorreção segura
 make package       # dist/<ext>-<versão>.rbz
 make refdocs       # regenera docs/reference (rede)
-# SketchUp no Windows via interop do WSL (pedem confirmação do usuário):
-make su-loader SU_YEAR=2026   # instala loader de dev no Plugins
-make su-launch | su-debug | su-ping
-tools/sketchup/su-eval '<ruby>'   # executa no SketchUp aberto, retorna JSON
-make su-testup                    # TestUp em modo CI
-make vray-docs-import             # importa doc oficial da API V-Ray instalada
+make dev-bridge-package # dist/me_dev_bridge-*.rbz (extensão SÓ de desenvolvimento)
+# SketchUp + V-Ray no DESKTOP Windows da rede, via Dev Bridge + túnel SSH
+# (docs/remote-desktop-setup.md; pedem confirmação do usuário):
+make su-ping                      # conexão ok?
+make su-reload                    # envia src/ + tests/sketchup/ e recarrega
+tools/devbridge/su eval '<ruby>'  # executa no SketchUp do desktop, retorna JSON
+make su-test [FILTER=TC_X#]       # TestUp no desktop
+make vray-docs-import             # baixa a doc oficial da API V-Ray instalada no desktop
 ```
 
 Sem Ruby no host: nunca rode `ruby`/`bundle` direto no WSL; use
-`docker compose run --rm dev <cmd>`.
+`docker compose run --rm dev <cmd>`. O cliente `tools/devbridge/su` usa só o
+`python3` e o `ssh` do WSL.
 
 ## Estrutura
 
@@ -48,12 +51,13 @@ src/me_vray_toolkit/vray/       VRayBridge (único ponto que toca ::VRay) + lóg
 tests/unit/                     Minitest puro (Docker)
 tests/sketchup/                 TestUp (dentro do SketchUp), convenção TC_*.rb
 tools/build/                    empacotamento e runner de testes
-tools/sketchup/                 loader de dev, ponte, launcher, TestUp CI, debugger
+tools/devbridge/                Dev Bridge (extensão dev no desktop), cliente `su`, script OpenSSH
+tools/debug/                    bootstrap do debugger (template oficial; ainda não usado remotamente)
 tools/docs/                     geradores/atualizadores da base de referência
 docs/                           roadmap, progresso, decisões, arquitetura, workflow, referência
 ```
 
-Arquitetura e topologia WSL ↔ Windows ↔ Docker: `docs/architecture.md`.
+Arquitetura e topologia WSL ↔ desktop Windows ↔ Docker: `docs/architecture.md`.
 
 ## Regras do projeto
 
@@ -63,7 +67,9 @@ Arquitetura e topologia WSL ↔ Windows ↔ Docker: `docs/architecture.md`.
   Todo código novo de lógica pura vem com teste em `tests/unit/`.
 - Requisitos do Extension Warehouse são inegociáveis (lint os verifica). Antes
   de release: skill `sketchup-review-extension`.
-- `.rbz` nunca inclui nada de `tools/` (loader/ponte de dev executam código arbitrário).
+- A Dev Bridge executa código arbitrário: nunca entra num `.rbz` de produto nem
+  no Extension Warehouse; só escuta em 127.0.0.1 e é acessada por SSH. Não
+  altere essas garantias de segurança sem pedido explícito do usuário.
 - Não salvar/fechar/alterar o modelo do usuário via ponte sem pedido explícito.
 - Git: commits pequenos em pt-BR, só quando o usuário pedir; rodar `make check` antes.
 
