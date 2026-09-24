@@ -112,7 +112,7 @@ Concorrência forte; diferenciar por personalização e integração.
 
 | Item | Status |
 |---|---|
-| CI remoto (GitHub Actions rodando `make check`) quando houver remoto | ideia |
+| CI remoto (GitHub Actions: lint, testes, `.rbz` como artefato) — `.github/workflows/ci.yml` | publicado |
 | Hook de pre-commit com `make check` | ideia |
 | Anotações via Text tool como "ponteiro" para o agente (ideia do Claude Bridge) na ponte de dev | ideia |
 | Script de assinatura/criptografia (Extension Signing Portal) para distribuição fora do EW | ideia |

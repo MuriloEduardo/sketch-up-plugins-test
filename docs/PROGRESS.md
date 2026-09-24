@@ -2,6 +2,13 @@
 
 Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 
+## 2026-09-24 — Repositório remoto e CI
+
+- Remoto: git@github.com:MuriloEduardo/sketch-up-plugins-test.git (branch `master`,
+  SSH com a chave pessoal `id_ed25519`; a conta do `gh` não tem push).
+- GitHub Actions (`.github/workflows/ci.yml`): `make build/lint/test/package` a cada
+  push/PR em `master`; `.rbz` fica como artefato por 30 dias.
+
 ## 2026-09-24 — Bootstrap do harness
 
 Feito:
