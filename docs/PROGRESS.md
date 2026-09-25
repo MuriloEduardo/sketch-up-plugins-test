@@ -114,7 +114,8 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
   (exterior_day, exterior_golden_hour, overcast, interior_daylight,
   interior_artificial, studio). Cômodo de teste (temp): padrão = escuro,
   `interior_daylight` = bem exposto, noturno com luminária = cor quente
-  natural. Aberto: janela clara à noite (céu ligado ao sol ainda aparece).
+  natural; com `background_sky` (desliga a textura de céu `/Environment Sky`
+  no fundo, `bg_tex_tex_on`) a janela à noite fica azul-escura.
 - Render não respeitou `progressive_maxTime` num interior escuro: o job agora
   para o V-Ray no limite e **salva a imagem** ("time limit reached").
 - **Início/fim de render sempre visíveis** (pedido do usuário): feature
@@ -123,7 +124,7 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
   em todo job. `Jobs` publica `job.<estado>` só na transição e `job.progress`
   no resto.
 
-Próximo: céu escuro no preset noturno (textura de fundo), denoiser, depois
+Próximo: denoiser, depois
 animações (transições de cena do SketchUp, turntable com V-Ray). + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 

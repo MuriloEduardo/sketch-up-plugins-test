@@ -100,6 +100,9 @@ module MuriloEduardo
           environment_gi_multiplier: { plugin: ENVIRONMENT, parameter: :gi_tex_mult, type: :number,
                                        range: 0.0..100.0, group: :environment,
                                        description: 'Ambient (sky/GI environment) light multiplier', },
+          background_sky: { plugin: ENVIRONMENT, parameter: :bg_tex_tex_on, type: :boolean, group: :environment,
+                            description: 'Show the sky behind windows and openings; off = background_color ' \
+                                         '(use off for night scenes)', },
           background_color: { plugin: ENVIRONMENT, parameter: :bg_color, type: :rgb, group: :environment,
                               description: 'Background color, RGB 0-255', },
           background_multiplier: { plugin: ENVIRONMENT, parameter: :bg_tex_mult, type: :number, range: 0.0..100.0,

@@ -58,7 +58,7 @@ module MuriloEduardo
                 camera_exposure: 'physical', auto_exposure: 'histogram', auto_exposure_compensation: 0.0,
                 auto_white_balance: 'off', white_balance_kelvin: 4000, sun_enabled: false, highlight_burn: 0.5,
                 environment_gi_override: true, environment_gi_color: [20, 26, 45], environment_gi_multiplier: 0.3,
-                background_color: [8, 10, 20], background_multiplier: 0.05
+                background_sky: false, background_color: [3, 4, 10], background_multiplier: 0.05
               ),
           },
           'studio' => {
