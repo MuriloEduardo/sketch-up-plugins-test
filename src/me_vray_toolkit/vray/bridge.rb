@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+Sketchup.require('me_vray_toolkit/vray/material_parameters')
 Sketchup.require('me_vray_toolkit/vray/plugin_path')
 Sketchup.require('me_vray_toolkit/vray/quality_preset')
 
@@ -333,6 +334,96 @@ module MuriloEduardo
         color.to_a.first(3).map { |channel| (channel * 255).round.clamp(0, 255) }
       end
       private_class_method :to_rgb
+
+      # Child plugin holding a VRayMtl's settings (see create_vray_material).
+      VRAY_MTL_CHILD = 'VRay Mtl'
+
+      # @return [Array<Hash>] `{ name:, type:, settings: }` for every material;
+      #   type "sketchup" (plain SketchUp material) or "vray" (VRayMtl, with
+      #   {MaterialParameters} settings)
+      def self.vray_materials
+        materials = []
+        scene.each do |plugin|
+          next unless plugin.category == :material
+
+          brdf = brdf_of(plugin)
+          materials << { name: plugin.name.delete_prefix('/'), type: brdf ? 'vray' : 'sketchup',
+                         settings: brdf ? MaterialParameters.from_vray(read_parameters(brdf)) : nil, }
+        end
+        materials
+      end
+
+      # Creates a VRayMtl (MtlSingleBRDF + BRDFVRayMtl child); V-Ray adds the
+      # SketchUp material with the same name (verified on 7.20).
+      #
+      # @param name [String] without the leading "/"
+      # @param values [Hash] {MaterialParameters} friendly settings
+      # @raise [ArgumentError] if the name is taken
+      def self.create_vray_material(name, values)
+        path = "/#{name}"
+        change do |current_scene|
+          raise ArgumentError, "a V-Ray material named #{name} already exists" if current_scene[path]
+
+          material = current_scene.create(:MtlSingleBRDF, path)
+          material[:brdf] = current_scene.create(:BRDFVRayMtl, "#{path}/#{VRAY_MTL_CHILD}")
+        end
+        update_vray_material(name, values) unless values.empty?
+      end
+
+      # @param name [String] VRayMtl name without "/"
+      # @param values [Hash] {MaterialParameters} friendly settings
+      # @raise [ArgumentError] if it is not a VRayMtl
+      def self.update_vray_material(name, values)
+        parameters = MaterialParameters.to_vray(values)
+        change do |current_scene|
+          material = current_scene["/#{name}"]
+          brdf = material && brdf_of(material) or
+            raise ArgumentError, "#{name} is not a V-Ray material (convert it first)"
+          parameters.each do |parameter, value|
+            brdf[parameter] = value.is_a?(Array) ? ::VRay::Color.new(*value) : value
+          end
+        end
+      end
+
+      # Turns a SketchUp material into a VRayMtl with V-Ray's own command
+      # (internal API).
+      #
+      # @param name [String] SketchUp material name
+      # @raise [NotAvailable] when this V-Ray cannot do it by script
+      def self.convert_material_to_vray(name)
+        unless defined?(::VRay::Command) && ::VRay::Command.respond_to?(:convert_material_to_vray)
+          raise NotAvailable, 'This V-Ray cannot convert materials by script'
+        end
+
+        # The command wants the plugin name ("/Wood"); the BRDF child it
+        # creates is "/Wood/BRDFVRayMtl" (verified on 7.20).
+        ::VRay::Command.convert_material_to_vray(name: "/#{name}", context: context)
+      end
+
+      # The VRayMtl settings plugin of a material, whatever its name
+      # ("/X/VRay Mtl" when we create it, "/X/BRDFVRayMtl" when V-Ray converts).
+      #
+      # @return [Object, nil] a BRDFVRayMtl plugin
+      def self.brdf_of(material)
+        return nil unless material.type == :MtlSingleBRDF
+
+        brdf = material[:brdf]
+        brdf if brdf.respond_to?(:type) && brdf.type == :BRDFVRayMtl
+      end
+      private_class_method :brdf_of
+
+      def self.read_parameters(plugin)
+        wanted = MaterialParameters::MAP.values.map(&:first)
+        values = {}
+        # VRay::Scene::Plugin#each yields parameters; it has no each_key.
+        plugin.each do |name, value, *|
+          next unless wanted.include?(name)
+
+          values[name] = value.respond_to?(:to_a) ? value.to_a : value
+        end
+        values
+      end
+      private_class_method :read_parameters
 
       # Snapshot of the environment, useful for diagnostics and bug reports.
       #

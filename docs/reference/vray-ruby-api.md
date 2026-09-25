@@ -102,6 +102,19 @@ Luzes por script, verificado ao vivo **[7.20, 2026-09-25]**:
   `intensity_multiplier`, `size_multiplier`, `turbidity`, `ozone`.
 - HDRI de teste no próprio V-Ray: `extension/ruby/resources/Default Dome Light Texture.exr`.
 
+Materiais por script, verificado ao vivo **[7.20, 2026-09-25]**:
+- Criar VRayMtl: `MtlSingleBRDF "/Nome"` + `BRDFVRayMtl "/Nome/VRay Mtl"` em
+  `mtl[:brdf]`; o material do SketchUp de mesmo nome aparece **na hora**.
+- Parâmetros user data do BRDF: `diffuse_color`, `reflect_color`,
+  `reflect_glossiness_float`, `metalness_float`, `roughness_float`,
+  `refract_color`, `refract_ior_float`, `refract_glossiness_float`,
+  `opacity_float`, `coat_amount_float`, `self_illumination_color`,
+  `fresnel_ior_float`, `bump_amount_float` (+ `*_tex`/`*_tex_on` de texturas).
+- `VRay::Command.convert_material_to_vray(name: "/Nome", context:)` **[interno]**
+  exige o nome **com barra** (sem ela não faz nada) e cria o filho
+  `/Nome/BRDFVRayMtl` (outro nome!): ache o BRDF por `material[:brdf]`, não
+  pelo nome.
+
 Estados do renderer (doc): `:idleInitialized`, `:idleStopped`, `:idleError`,
 `:idleFrameDone`, `:idleDone`, `:preparing`, `:rendering`, `:renderingPaused`,
 `:renderingAwaitingChanges`.
