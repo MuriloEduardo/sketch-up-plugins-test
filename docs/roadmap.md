@@ -30,6 +30,23 @@ Status: `ideia` → `validando` → `em andamento` → `beta` → `publicado`.
 
 ---
 
+## Prioridades (atualizado 2026-09-24)
+
+Base: `docs/research/forum-demand-2026-09.md` (cerca de 1,9 mil tópicos dos fóruns do
+SketchUp e da Chaos). Ordem dos próximos módulos (cada um só usa pilares; ver
+`docs/platform.md`):
+
+1. `layout_sheets`: pranchas por cena + índice + auto-text de cena/escala + PDF (Fase 5).
+2. `scene_manager`: matriz cenas × tags, renomear em lote, propriedades por cena.
+3. `scene_render`: configurações V-Ray por cena (proporção, saída, `.vropt`) + fila de render (Fase 2).
+4. `material_tools`: trocar e limpar materiais sem uso, relink de texturas, cor aleatória (Fase 3).
+5. `data_export`: JSON/CSV de componentes, materiais e áreas (Fase 4).
+6. Desde já, cada módulo expõe **ações tipadas** (pilar P8) que viram
+   ferramentas do MCP (Fase 6).
+
+Evitar por ora: paramétricos (Medeek), marcenaria/CNC (OpenCutList), render
+IA (Diffusion nativo da Trimble).
+
 ## Fases
 
 ### Fase 0 — Bootstrap do harness ✅
@@ -52,6 +69,7 @@ os pilares da plataforma (`docs/platform.md`), cada um puxado por um módulo rea
 | F1.8 | Licenciamento EW (`Sketchup::Licensing`) + modo trial | ideia |
 | F1.9 | Build multi-produto (manifestos, core copiado por namespace) — pilar P0 | ✅ |
 | F1.10 | Kernel (comandos, menu, i18n, erros) — pilar P1 | ✅ mínimo (falta toolbar, preferências) |
+| F1.13 | Ações tipadas (entrada com esquema, sem UI) por feature — pilar P8, base do MCP | ideia |
 | F1.12 | Módulo `scene_audit` (arquivos V-Ray faltando, texturas pesadas, materiais sem uso) | ✅ beta, validado ao vivo |
 | F1.11 | Mapa da API do LayOut (`docs/reference/layout-api.md`) + validação ao vivo | em andamento |
 
@@ -88,11 +106,33 @@ Concorrência forte; diferenciar por personalização e integração.
 | P3.4 | Numeração sequencial de componentes/DCs para relatórios | 222692 | ideia |
 | P3.5 | Caixa de atributos globais para Dynamic Components | 239206 | ideia |
 
-### Fase 5 — Produto 4: **LayOut automático**
+### Fase 5 — Produto 4: **LayOut automático** (prioridade 1)
 | # | Funcionalidade | Evidência | Status |
 |---|---|---|---|
-| P4.1 | Gerar pranchas LayOut a partir das cenas (por prefixo, ex.: `E.Front`, `P.Kitchen1`) com template | 236504 | ideia |
+| P4.1 | Gerar pranchas LayOut a partir das cenas (por prefixo, ex.: `E.Front`, `P.Kitchen1`) com template | 236504; LayOut FR: 143 pedidos de documentação | em andamento |
 | P4.2 | Pranchas de renders V-Ray + legendas | combina P1 + P4.1 | ideia |
+| P4.3 | Índice de pranchas / lista de desenhos automática | LayOut FR: 4,6 mil + 2,5 mil + 2,1 mil visualizações | ideia |
+| P4.4 | Carimbo com nome da cena, escala, nº/total, data (texto gerado; auto-text quando a API permitir) | 7,8 mil + 5,1 mil visualizações | ideia |
+| P4.5 | Regenerar pranchas quando o modelo muda (a API não tem "Update Model Reference") | "Reloading new models…", "Shortcut to update Layout reference" | ideia |
+| P4.6 | Exportar um PDF por prancha | "Layout export to separate files per page" | ideia |
+
+### Fase 6 — **Profissional por LLM** (ferramentas + servidor MCP)
+Pedido do usuário (2026-09-24): profissionais criarem **tudo** (projeto,
+render, detalhamento, LayOut) conversando com um LLM. A Trimble já tem um
+MCP oficial, mas ele modela do zero **na nuvem**. O nosso espaço é o SketchUp
+do desktop com V-Ray e LayOut, através de ferramentas de alto nível
+(`docs/research/forum-demand-2026-09.md`).
+
+| # | Funcionalidade | Status |
+|---|---|---|
+| L1 | Pilar P8: cada feature expõe ações tipadas (nome, descrição, esquema de entrada/saída), chamadas pela UI e pelo MCP | ideia |
+| L2 | Servidor MCP local do produto: só 127.0.0.1, token, **lista fechada de ações** (sem `eval`; a Dev Bridge nunca é reaproveitada no produto). Transporte a decidir: HTTP dentro do SketchUp ou processo stdio separado. Confirmar a política do EW para servidor local **[a verificar]** | ideia |
+| L3 | Ferramentas de leitura: modelo, cenas, tags, materiais, V-Ray, auditoria, quantitativos, captura do viewport | ideia |
+| L4 | Ferramentas de projeto/modelagem: geometria básica, componentes, tags, cenas, câmeras (com desfazer por operação) | ideia |
+| L5 | Ferramentas de render: materiais V-Ray, luzes, configurações por cena, render/lote, salvar imagens | ideia |
+| L6 | Ferramentas de detalhamento/LayOut: pranchas, viewports, cotas, textos, PDF | ideia |
+| L7 | Skills/prompts de fluxo (ex.: "apresentação de interiores": cenas → materiais → render → pranchas) | ideia |
+| L8 | Parceria com a Trimble ("MCP developer projects", tópico 347037) quando houver API produtizada | ideia |
 
 ### Backlog aberto (sob demanda / contrato / nichos)
 | Item | Evidência |

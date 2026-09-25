@@ -2,6 +2,18 @@
 
 Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 
+## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap
+
+- `tools/docs/fetch_forum_demand.py` + `analyze_forum_demand.py`: cerca de 1,9 mil
+  tópicos (SketchUp: job board, extensions, feature requests SU/LayOut, V-Ray,
+  AI render, trabalho comercial; Chaos: wishlist e general do V-Ray for SketchUp).
+- Relatório: `docs/research/forum-demand-2026-09.md`. Prioridades no roadmap:
+  `layout_sheets` → `scene_manager` → `scene_render` → `material_tools` → `data_export`.
+- Trimble + Anthropic lançaram em abril de 2026 um MCP oficial (modela na nuvem). Nova Fase 6 do
+  roadmap (profissional por LLM: ferramentas + MCP local) e pilar P8 (ações tipadas).
+- LayOut, verificado ao vivo: `Model#save_copy` exige um modelo já salvo; as pranchas vão
+  exigir `.skp` salvo. As cenas de teste foram removidas do modelo aberto.
+
 ## 2026-09-24 — Pilares P0/P1 + módulo Auditoria de Cena (0.2.0)
 
 - P0: `products/<id>.json` → `tools/build/product_builder.rb` (produto

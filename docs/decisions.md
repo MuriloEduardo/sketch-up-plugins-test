@@ -86,3 +86,13 @@ a janela de tempo (a ponte fica ativa sempre que o SketchUp está aberto).
 Controle do dono: item de menu *Start Automatically* (0.1.2) com marcação.
 Padrão do `config.json` continua `false` para qualquer instalação nova.
 
+### 2026-09-24 — Direção LLM/MCP: desktop profissional, ações de alto nível
+Pedido do usuário: profissionais criarem tudo por LLM. A Trimble lançou (abr/2026)
+um MCP oficial que modela do zero numa sessão na nuvem. Decisão: não competir
+em "gerar geometria por prompt"; expor as **nossas features** como ações
+tipadas (pilar P8) num servidor MCP local que age no modelo aberto com V-Ray e
+LayOut. Segurança: só loopback, token e lista fechada de ações; a Dev Bridge
+(que executa código arbitrário) nunca é reaproveitada no produto.
+Consequência: toda feature nova separa a lógica (entrada explícita, sem UI)
+do comando de menu. Evidências em `docs/research/forum-demand-2026-09.md`.
+
