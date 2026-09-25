@@ -22,7 +22,7 @@ Sketchup.require('me_dev_bridge/menu')
 module MuriloEduardoDev
   module DevBridge
 
-    BRIDGE_VERSION = '0.2.0'
+    BRIDGE_VERSION = '0.2.1'
     MENU_TITLE = 'Dev Bridge (DEV ONLY)'
 
     # @return [String] %APPDATA%/MuriloEduardoDev

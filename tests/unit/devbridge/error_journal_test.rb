@@ -62,10 +62,14 @@ class DevBridgeErrorJournalTest < Minitest::Test
     assert_equal(File.size(@journal.path) - '{"id":"half"'.bytesize, batch.offset)
   end
 
-  def test_invalid_encoding_is_scrubbed
-    @journal.record(source: 'console', kind: 'E', message: "caf\xE9".b)
+  def test_windows_messages_keep_their_accents
+    ansi = 'Normalmente é permitida apenas uma utilização'.encode(Encoding::WINDOWS_1252)
+    @journal.record(source: 'bridge', kind: 'E', message: ansi)
+    @journal.record(source: 'bridge', kind: 'E', message: ansi.b)
 
-    assert_equal('caf?', @journal.recent.last['message'])
+    assert_equal(['Normalmente é permitida apenas uma utilização'] * 2, @journal.recent.map { |entry|
+      entry['message']
+    })
   end
 
 end

@@ -11,14 +11,19 @@ module MuriloEduardoDev
     # on Windows, only after a failure.
     module PortOwner
 
-      # @param netstat [String] output of `netstat -ano -p tcp`
+      # A listening socket has no remote end, whatever the Windows language
+      # calls its state (LISTENING, ESCUTANDO, ABHÖREN…).
+      NO_REMOTE = /\A(?:0\.0\.0\.0|\[::\]):0\z/
+
+      # @param netstat [String] output of `netstat -ano -p tcp`, in the console
+      #   code page (read as bytes: localized headers are not UTF-8)
       # @param port [Integer]
       # @return [Integer, nil] pid listening on that port
       def self.listening_pid(netstat, port)
-        netstat.each_line do |line|
+        netstat.b.each_line do |line|
           fields = line.split
           next unless fields.size >= 5 && fields[0].casecmp?('TCP')
-          next unless fields[1].end_with?(":#{port}") && fields[3].casecmp?('LISTENING')
+          next unless fields[1].end_with?(":#{port}") && NO_REMOTE.match?(fields[2])
 
           return Integer(fields[4], exception: false)
         end
@@ -28,7 +33,7 @@ module MuriloEduardoDev
       # @param tasklist [String] output of `tasklist /FI "PID eq N" /FO CSV /NH`
       # @return [String, nil] image name, e.g. "SketchUp.exe"
       def self.image_name(tasklist)
-        first = tasklist.lines.find { |line| line.start_with?('"') }
+        first = tasklist.b.lines.find { |line| line.start_with?('"') }
         first && first.split('","').first.delete('"')
       end
 

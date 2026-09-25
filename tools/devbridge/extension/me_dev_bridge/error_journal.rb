@@ -122,9 +122,19 @@ module MuriloEduardoDev
         nil
       end
 
-      # Console text may come in any encoding; the platform takes UTF-8.
+      # The platform takes UTF-8. Windows error messages come in the ANSI code
+      # page (Windows-1252 on pt-BR machines), tagged as such or as raw bytes.
       def clean(text, limit)
-        text.dup.force_encoding(Encoding::UTF_8).scrub('?')[0, limit]
+        utf8 = if [Encoding::UTF_8, Encoding::BINARY, Encoding::US_ASCII].include?(text.encoding)
+                 text.dup.force_encoding(Encoding::UTF_8)
+               else
+                 text.encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: '?')
+               end
+        unless utf8.valid_encoding?
+          utf8 = text.dup.force_encoding(Encoding::WINDOWS_1252)
+                     .encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: '?')
+        end
+        utf8[0, limit]
       end
 
     end

@@ -43,4 +43,12 @@ class DevBridgePortOwnerTest < Minitest::Test
     assert_includes(text, 'probably running')
   end
 
+  # pt-BR Windows: header in the console code page (not UTF-8) and state "ESCUTANDO".
+  def test_localized_netstat
+    netstat = "\r\nConex\xC6es ativas\r\n\r\n  Proto  Endere\x87o local  Endere\x87o externo  Estado  PID\r\n  " \
+              "TCP    127.0.0.1:7860         0.0.0.0:0              ESCUTANDO       9120\r\n".b
+
+    assert_equal(9120, PortOwner.listening_pid(netstat, 7860))
+  end
+
 end
