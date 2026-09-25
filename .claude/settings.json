@@ -24,18 +24,17 @@
       "Bash(timeout 300 make lint)",
       "Bash(timeout 400 make check)",
       "Bash(timeout 300 make package)",
-      "Bash(sed -i '80s/if model_path.empty?/if model.path.empty?/' src/me_vray_toolkit/features/layout_sheets/feature.rb)"
-    ],
-    "ask": [
-      "Bash(make su-connect:*)",
-      "Bash(make su-install-bridge:*)",
-      "Bash(make su-sync:*)",
-      "Bash(make su-reload:*)",
-      "Bash(make su-eval:*)",
+      "Bash(sed -i '80s/if model_path.empty?/if model.path.empty?/' src/me_vray_toolkit/features/layout_sheets/feature.rb)",
+      "Bash(make su-ping)",
+      "Bash(make su-sync)",
+      "Bash(make su-reload)",
       "Bash(make su-test:*)",
-      "Bash(make vray-docs-import:*)",
+      "Bash(make su-eval:*)",
+      "Bash(make vray-docs-import)",
       "Bash(tools/devbridge/su:*)",
-      "Bash(python3 tools/devbridge/su:*)"
-    ]
+      "Bash(timeout * make su-*)",
+      "Bash(timeout * tools/devbridge/su:*)"
+    ],
+    "ask": []
   }
 }
