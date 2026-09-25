@@ -69,6 +69,16 @@ module MuriloEduardo
             raise
           end
 
+          # Shows a scene at once: selecting a page animates the camera, so the
+          # view would still be moving when V-Ray exports it.
+          #
+          # @param model [Sketchup::Model]
+          # @param page [Sketchup::Page]
+          def show_scene(model, page)
+            model.pages.selected_page = page
+            model.active_view.camera = page.camera
+          end
+
           # @param job_id [String]
           # @raise [ArgumentError] if it is not running
           def cancel(job_id)

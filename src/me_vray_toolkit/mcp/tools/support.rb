@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+Sketchup.require('me_vray_toolkit/core/jobs')
 Sketchup.require('me_vray_toolkit/vray/bridge')
 
 module MuriloEduardo
@@ -50,6 +51,18 @@ module MuriloEduardo
           def render_settings
             values = VRayBridge.render_settings
             values.merge(quality: VRayBridge::QualityPreset::LABELS[values.delete(:quality_preset)])
+          end
+
+          # @param id [String] from render_scene or render_all_scenes
+          # @return [Jobs::Job]
+          # @raise [ArgumentError] (a readable tool error) for other ids
+          def render_job(id)
+            job = Jobs.fetch(id)
+            raise ArgumentError, "#{id} is not a render" unless %w[render render_batch].include?(job.kind)
+
+            job
+          rescue KeyError
+            raise ArgumentError, "no render #{id}"
           end
 
           # @param entity [Sketchup::Drawingelement]

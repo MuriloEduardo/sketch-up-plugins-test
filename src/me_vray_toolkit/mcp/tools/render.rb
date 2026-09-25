@@ -6,6 +6,7 @@ Sketchup.require('me_vray_toolkit/core/actions')
 Sketchup.require('me_vray_toolkit/core/jobs')
 Sketchup.require('me_vray_toolkit/mcp/tools/support')
 Sketchup.require('me_vray_toolkit/vray/bridge')
+Sketchup.require('me_vray_toolkit/vray/render_batch')
 Sketchup.require('me_vray_toolkit/vray/render_job')
 
 module MuriloEduardo
@@ -28,16 +29,7 @@ module MuriloEduardo
             data.merge(image: { data: Base64.strict_encode64(File.binread(path)), mime_type: 'image/png' })
           end
 
-          def self.render_job(id)
-            job = Jobs.fetch(id)
-            raise ArgumentError, "#{id} is not a render" unless job.kind == 'render'
-
-            job
-          rescue KeyError
-            raise ArgumentError, "no render #{id}"
-          end
-
-          JOB_ID = { type: :string, required: true, description: 'Render id from render_scene' }.freeze
+          JOB_ID = { type: :string, required: true, description: 'Id from render_scene or render_all_scenes' }.freeze
 
           Actions.register(
               name: 'render_scene', group: :vray,
@@ -57,7 +49,7 @@ module MuriloEduardo
             scene = params[:scene].to_s.empty? ? nil : params[:scene]
             if scene
               page = model.pages[scene] or raise ArgumentError, "no scene named #{scene}"
-              model.pages.selected_page = page
+              VRayBridge::RenderJob.show_scene(model, page)
             end
             saved = VRayBridge.render_settings
             job = VRayBridge::RenderJob.start(model: model, scene: scene, width: params[:width] || saved[:width],
@@ -75,9 +67,11 @@ module MuriloEduardo
 
           Actions.register(
               name: 'cancel_render', group: :vray,
-              description: 'Stops a running render.', schema: { id: JOB_ID }
+              description: 'Stops a running render, or a batch from render_all_scenes (current render and the rest).',
+              schema: { id: JOB_ID }
             ) do |params|
-            VRayBridge::RenderJob.cancel(render_job(params[:id]).id)
+            job = render_job(params[:id])
+            job.kind == 'render_batch' ? VRayBridge::RenderBatch.cancel(job.id) : VRayBridge::RenderJob.cancel(job.id)
             render_job(params[:id]).to_h
           end
 

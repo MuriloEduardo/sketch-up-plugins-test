@@ -230,7 +230,7 @@ groups:
       render_scene: done
       get_render_status: done
       cancel_render: done
-      render_all_scenes: planned
+      render_all_scenes: done
       render_material_variations: planned
       export_vrscene: planned
       list_missing_files: planned

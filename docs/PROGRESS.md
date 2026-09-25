@@ -101,8 +101,15 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
   Verificado ao vivo com render (caixa dourada + vidro). Achado: a conversão
   exige "/Nome" e cria o filho "/Nome/BRDFVRayMtl". TestUp 40/40; 188 unit.
 
-Próximo (V-Ray): render de todas as cenas em lote e variações de material;
-investigar por que o sol perdeu as sombras depois de criar o domo. + auto-texto de cena/escala (P4.4),
+- `render_all_scenes`: lote de cenas como job `render_batch` encadeado por
+  eventos; ao vivo 3 cenas em 44 s. Cenas passam a ser mostradas com a câmera
+  aplicada na hora (a seleção de página anima a transição).
+- Recarga de dev: métodos removidos de um arquivo continuam no módulo até
+  reiniciar o SketchUp (achado ao mover `render_job` para o `Support`).
+
+Próximo: **dor da Lilian** — ajustar parâmetros de render conforme a luz
+(sol, ambiente, luzes artificiais): exposição, balanço de branco, sol/céu,
+GI, color mapping, com presets por cenário. Depois: animações (SketchUp e V-Ray). + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap

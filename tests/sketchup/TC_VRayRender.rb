@@ -4,6 +4,7 @@ require 'testup/testcase'
 
 Sketchup.require('me_vray_toolkit/core/jobs')
 Sketchup.require('me_vray_toolkit/vray/bridge')
+Sketchup.require('me_vray_toolkit/vray/render_batch')
 Sketchup.require('me_vray_toolkit/vray/render_job')
 
 module MuriloEduardo
@@ -37,6 +38,22 @@ module MuriloEduardo
 
         def test_unknown_render_setting_is_refused
           assert_raises(ArgumentError) { VRayBridge.update_render_settings(colour: 'red') }
+        end
+
+        def test_batch_without_scenes_is_refused
+          assert_raises(ArgumentError) do
+            VRayBridge::RenderBatch.start(model: Sketchup.active_model, scenes: [], width: 64, height: 48)
+          end
+        end
+
+        def test_show_scene_applies_the_camera_at_once
+          model = Sketchup.active_model
+          page = model.pages.add('Probe')
+          model.active_view.camera = Sketchup::Camera.new([100, 100, 100], ORIGIN, Z_AXIS)
+
+          VRayBridge::RenderJob.show_scene(model, page)
+
+          assert_equal(page.camera.eye, model.active_view.camera.eye)
         end
 
         def test_render_job_starts_and_allows_one_at_a_time
