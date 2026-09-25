@@ -32,7 +32,7 @@ Docker (compose.yaml) — Ruby 3.2 = SketchUp 2024–2026
 
 | Pasta | Conteúdo | Depende de | Testado por |
 |---|---|---|---|
-| `core/` | pilares genéricos: `Commands` (registro), `I18n`, `Html` (puros); `Menu`, `ReportDialog` (UI) | Ruby / SketchUp | Minitest + TestUp |
+| `core/` | pilares genéricos: `Commands` (registro), `I18n`, `Html`, `Params`, `InputForm` (puros); `Menu`, `ReportDialog` (UI) | Ruby / SketchUp | Minitest + TestUp |
 | `sketchup/` | `ModelData`: fatos do modelo como Hashes | SketchUp | TestUp |
 | `vray/` | `VRayBridge` (único ponto que toca `::VRay`) + `QualityPreset`, `PluginPath` (puros) | SketchUp + V-Ray | Minitest + TestUp |
 | `features/<nome>/` | `feature.rb` (registra comandos, coleta dados) + lógica pura (analisadores, relatórios, textos) | pilares | Minitest + TestUp |

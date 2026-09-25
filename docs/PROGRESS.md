@@ -2,6 +2,39 @@
 
 Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 
+## 2026-09-25 — Módulo `layout_sheets` (pranchas do LayOut por cena)
+
+- Novo módulo `features/layout_sheets/`: uma prancha por cena do modelo salvo
+  (viewport + carimbo com projeto, descrição, nome, "Prancha 02 / 12" e data),
+  índice de pranchas opcional e PDF. Filtro por prefixo (`P., E.`), papel
+  A4–A1/Letter/Tabloid, orientação e modo de render da viewport. Grava
+  `<modelo>.layout`/`.pdf` ao lado do `.skp` sem nunca sobrescrever.
+- Pilar P8 começou: `core/params.rb` (esquema + validação) e
+  `core/input_form.rb` (esquema → `UI.inputbox`). A ação tipada é
+  `LayoutSheets.generate(model, input)`; o menu só coleta a entrada.
+- `ModelData.scenes`. 112 testes unitários (eram 89), lint limpo.
+- Verificado ao vivo (só em `temp_dir`, modelo aberto intocado): viewport de
+  `.skp`, render, `.layout` de 2 páginas + PDF em 0,5 s; PNG das páginas
+  conferido visualmente. Fatos novos em `docs/reference/layout-api.md`
+  (cena N = índice N+1, `Document.new` usa o template do usuário, eixo y para
+  baixo, `Backup of` ao salvar por cima).
+
+- TestUp ao vivo (autorizado pelo usuário): 22 testes, 0 falhas. Achados:
+  `model.path` vem com `\` no Windows (normalizado para `/`); o
+  `start_with_empty_model` do TestUp **não** cria modelo novo (limpa o atual),
+  então quem salva o modelo ativo deve chamar `open_new_model` no teardown.
+  `su-test` só sincroniza: rode `make su-reload` antes, senão testa código velho.
+  `FILTER=TC_X#` rodou 0 testes (classes com namespace); investigar.
+- O modelo sem nome que estava aberto no desktop foi descartado pelo TestUp
+  (com autorização). O item novo do menu só aparece após reiniciar o SketchUp.
+- Versão 0.3.0 (`dist/me_vray_toolkit-0.3.0.rbz`), já sincronizada no workspace
+  do desktop: basta reiniciar o SketchUp para testar (não instalar o `.rbz` junto).
+- Roadmap: Fase 6 ampliada (L9–L12, catálogo máximo de tools MCP); decisão do
+  usuário: seguir a ordem do roadmap, MCP depois dos módulos prioritários.
+
+Próximo: template `.layout` do usuário + auto-texto de cena/escala (P4.4),
+escala por cena ortogonal, depois `scene_manager`.
+
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap
 
 - `tools/docs/fetch_forum_demand.py` + `analyze_forum_demand.py`: cerca de 1,9 mil

@@ -67,6 +67,30 @@ usuário abre (ou exportamos PDF direto). [fórum 236504, DanRathbun]
 - [x] `Layout::Document.new` + `FormattedText` + `Rectangle` → `save` (.layout
       4,9 KB) e `export` (PDF 12 KB) em `Sketchup.temp_dir`: 0,16 s, papel padrão
       11×8,5", 1 página, 1 camada, atributos 2026 presentes **[SU 26.1, 2026-09-24]**.
-- [ ] Viewport `SketchUpModel` de um `.skp` temporário (cena, escala, render).
+- [x] Viewport `SketchUpModel` de um `.skp` copiado para `temp_dir`: `#render`
+      0,6 s (modelo quase vazio), `export` PDF 0,3 s; `.layout` de 2 páginas
+      (índice + viewport + carimbo) gravado em 0,5 s **[SU 26.1, 2026-09-25]**.
 - [ ] Abrir um template `.layout` e listar páginas/camadas/auto-text.
 - [ ] Medir tempo de `SketchUpModel#render` com modelo médio (bloqueia a UI?).
+
+## Fatos verificados ao vivo (SU 26.1, 2026-09-25)
+
+- `SketchUpModel#scenes` começa por `"Last saved SketchUp View"`: a cena N do
+  modelo é o índice N+1. Mapeie por **nome** (`scenes.index(nome)`), não por posição.
+  Só aparecem cenas do arquivo **salvo**; cena criada depois do último save não existe ali.
+- Viewport em perspectiva: `#view` = `CUSTOM_VIEW` (-1), `#scale` = 0.0 (escala só
+  vale para vista ortogonal). Constantes: `TOP_VIEW`=0, `FRONT_VIEW`=4, `ISO_VIEW`=8;
+  `RASTER_RENDER`=0, `HYBRID_RENDER`=1, `VECTOR_RENDER`=2.
+- `Layout::Document.new` usa o **template padrão do LayOut do usuário**: papel
+  11×8,5", margens 0,5", 1 página vazia, 1 camada (nome localizado, ex.:
+  "Predeterminado"; não compartilhada, não travada) e as definições de auto-texto
+  do template (inclusive campos personalizados e nomes localizados). Não
+  dependa de nomes de camada nem de auto-texto.
+- Espaço do papel: origem no canto **superior esquerdo**, y cresce para baixo
+  (retângulo em (1,1) com altura 0,5 tem `lower_right` = (3, 1,5)).
+- `Layout::Rectangle` novo vem com preenchimento branco (`solid_filled` = true):
+  desligue para moldura que não cobre nada. Texto novo: Arial 10 pt.
+- `FormattedText` resolve auto-texto de página: `"<PageNumber> / <PageCount>"` → `"1 / 1"`.
+- `Document#save` sobre um `.layout` existente deixa um `Backup of <nome>.layout`
+  ao lado. Nunca salve por cima do arquivo do usuário.
+- `Document#export("…/page.png", dpi: 40)` gera `page_<n>_<nome da página>.png`.

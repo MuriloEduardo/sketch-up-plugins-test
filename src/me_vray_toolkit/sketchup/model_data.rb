@@ -55,6 +55,12 @@ module MuriloEduardo
       private_class_method :count_entities
 
       # @param model [Sketchup::Model]
+      # @return [Array<Hash>] one per scene, in tab order: `{ name:, description: }`
+      def self.scenes(model)
+        model.pages.map { |page| { name: page.name, description: page.description } }
+      end
+
+      # @param model [Sketchup::Model]
       # @return [String, nil] folder of the saved model, nil if never saved
       def self.folder(model)
         model.path.empty? ? nil : File.dirname(model.path)

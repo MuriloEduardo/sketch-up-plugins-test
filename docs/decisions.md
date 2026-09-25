@@ -96,3 +96,22 @@ LayOut. Segurança: só loopback, token e lista fechada de ações; a Dev Bridge
 Consequência: toda feature nova separa a lógica (entrada explícita, sem UI)
 do comando de menu. Evidências em `docs/research/forum-demand-2026-09.md`.
 
+
+### 2026-09-25 — `layout_sheets`: arquivos novos ao lado do `.skp`, nunca sobrescrever
+O LayOut não tem API "ao vivo" nem "Update Model Reference", e salvar por cima
+de um `.layout` só deixa um `Backup of…`. Por isso o módulo sempre **gera** um
+documento novo (`<modelo>.layout`, depois `<modelo> (2).layout`…) e o PDF com o
+mesmo nome; nunca edita nem substitui o arquivo em que o usuário trabalhou.
+Exige modelo salvo (a viewport aponta para o `.skp`); com alterações pendentes,
+o comando pergunta se salva. Cenas são casadas **por nome** com as do arquivo
+salvo; as que só existem no modelo aberto são puladas e informadas. Papel,
+carimbo e índice são desenhados por código (não dependem do template nem do
+auto-texto do usuário, que variam por instalação e idioma). Template do usuário
+e auto-texto de cena/escala ficam para uma próxima versão (P4.4).
+
+### 2026-09-25 — Pilar P8 começa com `Params` + `InputForm`
+Cada feature declara um `SCHEMA` (string, boolean, integer, enum com
+default/valores). `Params.normalize` valida a entrada de qualquer origem
+(menu, teste, futuro MCP) e `InputForm` monta o `UI.inputbox` a partir do mesmo
+esquema. Nada de JSON Schema/MCP ainda: só o necessário para a 1ª ação
+(`LayoutSheets.generate`).

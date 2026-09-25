@@ -69,7 +69,7 @@ os pilares da plataforma (`docs/platform.md`), cada um puxado por um módulo rea
 | F1.8 | Licenciamento EW (`Sketchup::Licensing`) + modo trial | ideia |
 | F1.9 | Build multi-produto (manifestos, core copiado por namespace) — pilar P0 | ✅ |
 | F1.10 | Kernel (comandos, menu, i18n, erros) — pilar P1 | ✅ mínimo (falta toolbar, preferências) |
-| F1.13 | Ações tipadas (entrada com esquema, sem UI) por feature — pilar P8, base do MCP | ideia |
+| F1.13 | Ações tipadas (entrada com esquema, sem UI) por feature — pilar P8, base do MCP | em andamento (`Params` + `InputForm`; 1ª ação: `LayoutSheets.generate`) |
 | F1.12 | Módulo `scene_audit` (arquivos V-Ray faltando, texturas pesadas, materiais sem uso) | ✅ beta, validado ao vivo |
 | F1.11 | Mapa da API do LayOut (`docs/reference/layout-api.md`) + validação ao vivo | em andamento |
 
@@ -109,16 +109,22 @@ Concorrência forte; diferenciar por personalização e integração.
 ### Fase 5 — Produto 4: **LayOut automático** (prioridade 1)
 | # | Funcionalidade | Evidência | Status |
 |---|---|---|---|
-| P4.1 | Gerar pranchas LayOut a partir das cenas (por prefixo, ex.: `E.Front`, `P.Kitchen1`) com template | 236504; LayOut FR: 143 pedidos de documentação | em andamento |
+| P4.1 | Gerar pranchas LayOut a partir das cenas (por prefixo, ex.: `E.Front`, `P.Kitchen1`) com template | 236504; LayOut FR: 143 pedidos de documentação | em andamento: módulo `layout_sheets` (papel/orientação, carimbo, índice, PDF); falta TestUp ao vivo e template do usuário |
 | P4.2 | Pranchas de renders V-Ray + legendas | combina P1 + P4.1 | ideia |
-| P4.3 | Índice de pranchas / lista de desenhos automática | LayOut FR: 4,6 mil + 2,5 mil + 2,1 mil visualizações | ideia |
+| P4.3 | Índice de pranchas / lista de desenhos automática (1ª versão em `layout_sheets`) | LayOut FR: 4,6 mil + 2,5 mil + 2,1 mil visualizações | ideia |
 | P4.4 | Carimbo com nome da cena, escala, nº/total, data (texto gerado; auto-text quando a API permitir) | 7,8 mil + 5,1 mil visualizações | ideia |
 | P4.5 | Regenerar pranchas quando o modelo muda (a API não tem "Update Model Reference") | "Reloading new models…", "Shortcut to update Layout reference" | ideia |
 | P4.6 | Exportar um PDF por prancha | "Layout export to separate files per page" | ideia |
 
 ### Fase 6 — **Profissional por LLM** (ferramentas + servidor MCP)
 Pedido do usuário (2026-09-24): profissionais criarem **tudo** (projeto,
-render, detalhamento, LayOut) conversando com um LLM. A Trimble já tem um
+render, detalhamento, LayOut) conversando com um LLM.
+Ampliado em 2026-09-25: transformar SketchUp, LayOut e V-Ray no **máximo de
+ferramentas/skills MCP** para agentes do mundo todo. Arquitetura proposta: o
+MCP roda **local** na extensão (licença do usuário), cada agente se conecta ao
+SketchUp do próprio profissional; tools geradas do registro de ações (P8);
+nunca `eval` no produto. Ordem: seguir o roadmap; esta fase começa depois dos
+módulos prioritários. A Trimble já tem um
 MCP oficial, mas ele modela do zero **na nuvem**. O nosso espaço é o SketchUp
 do desktop com V-Ray e LayOut, através de ferramentas de alto nível
 (`docs/research/forum-demand-2026-09.md`).
@@ -132,6 +138,10 @@ do desktop com V-Ray e LayOut, através de ferramentas de alto nível
 | L5 | Ferramentas de render: materiais V-Ray, luzes, configurações por cena, render/lote, salvar imagens | ideia |
 | L6 | Ferramentas de detalhamento/LayOut: pranchas, viewports, cotas, textos, PDF | ideia |
 | L7 | Skills/prompts de fluxo (ex.: "apresentação de interiores": cenas → materiais → render → pranchas) | ideia |
+| L9 | **Catálogo máximo de ferramentas** (pedido 2026-09-25): inventário das APIs SketchUp + LayOut + V-Ray → lista de ferramentas por grupo (modelo, cenas, tags, materiais, V-Ray, render, LayOut), ligáveis por grupo; ferramentas genéricas-seguras (consulta de entidades, parâmetro V-Ray de lista permitida) para cobrir muita API com poucas tools | ideia |
+| L10 | Registro de ações → JSON Schema → servidor MCP gerado automaticamente (cada feature nova vira tool) | ideia |
+| L11 | Skills públicas (pacotes de fluxo que usam as tools) para agentes de qualquer fornecedor | ideia |
+| L12 | A verificar: política do EW para servidor local, EULA Trimble/Chaos para automação por agente, posicionamento frente ao MCP oficial da Trimble | ideia |
 | L8 | Parceria com a Trimble ("MCP developer projects", tópico 347037) quando houver API produtizada | ideia |
 
 ### Backlog aberto (sob demanda / contrato / nichos)

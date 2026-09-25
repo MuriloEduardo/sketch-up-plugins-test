@@ -48,7 +48,8 @@ Sem Ruby no host: nunca rode `ruby`/`bundle` direto no WSL; use
 src/me_vray_toolkit.rb          registro da extensão (SÓ registro — regra do EW)
 src/me_vray_toolkit/            produto COMPLETO (todas as features); ver docs/platform.md
   main.rb, product.rb           carregador + lista de features (FEATURES)
-  core/                         pilares genéricos: Commands, Menu, I18n, Html, ReportDialog
+  core/                         pilares genéricos: Commands, Menu, I18n, Html, ReportDialog,
+                                Params (esquema de ações, P8), InputForm
   sketchup/                     ModelData (fatos do modelo como Hashes)
   vray/                         VRayBridge (único ponto que toca ::VRay) + lógica pura
   features/<nome>/              uma funcionalidade; só usa pilares, nunca outra feature

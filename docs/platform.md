@@ -50,7 +50,7 @@ coloca o core **dentro do namespace de cada produto**
 | P5 | **UI**: uma janela HtmlDialog padrão (ponte Ruby↔JS, tema, i18n) | todos os módulos com janela | F1.7 |
 | P6 | **Saídas**: LayOut (páginas, viewports, PDF), CSV, imagens | pranchas, relatórios | novo |
 | P7 | **Licença/trial** (`Sketchup::Licensing`) | só quando existir o 1º pago | F1.8 |
-| P8 | **Ações tipadas + MCP**: toda feature expõe ações (nome, descrição, esquema de entrada/saída) que a UI e o servidor MCP chamam igual | profissional por LLM (roadmap Fase 6) | F1.13 |
+| P8 | **Ações tipadas + MCP**: toda feature expõe ações (nome, descrição, esquema de entrada/saída) que a UI e o servidor MCP chamam igual. Início: `core/params.rb` (esquema + validação) e `core/input_form.rb` (esquema → `UI.inputbox`) | profissional por LLM (roadmap Fase 6) | F1.13 |
 
 Regra desde já (P8): a lógica de uma feature fica numa função com entrada
 explícita (Hash de parâmetros simples: números, textos, listas) e sem UI. O

@@ -12,7 +12,7 @@ module MuriloEduardo
     unless file_loaded?(__FILE__)
       EXTENSION = SketchupExtension.new('V-Ray Toolkit', 'me_vray_toolkit/main')
       EXTENSION.description = 'Automation toolkit for SketchUp and V-Ray.'
-      EXTENSION.version     = '0.2.0'
+      EXTENSION.version     = '0.3.0'
       EXTENSION.copyright   = 'Murilo Eduardo © 2026'
       EXTENSION.creator     = 'Murilo Eduardo'
       Sketchup.register_extension(EXTENSION, true)
