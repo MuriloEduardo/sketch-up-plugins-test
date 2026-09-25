@@ -3,6 +3,16 @@
 Registre aqui decisões que não são óbvias pelo código. Formato: data, decisão,
 motivo, consequência. Não apague; marque como substituída.
 
+### 2026-09-25 — Modo 2 do MCP por fila na plataforma (etapa 1 do agente da Lilian)
+Pedido: a Lilian pede coisas a um agente no chat da plataforma dela, e outros
+clientes MCP plugam no mesmo servidor, sem chave de API para ela cuidar. O
+plugin liga para a plataforma (a nuvem não alcança o desktop) e busca uma fila
+em vez de manter WebSocket (a Vercel não segura conexão longa; nada de servidor
+novo). Reaproveita o `Protocol` do Modo 1: a plataforma só repassa JSON-RPC.
+Vínculo por código digitado no SketchUp; o token (`lrd_`) fica nas
+preferências do SketchUp. Consequência: o produto passa a falar com servidor
+próprio (política do Extension Warehouse ainda **a verificar** antes de vender).
+
 ### 2026-09-25 — Painel e auditoria de erros na plataforma da Lilian Rosa Interiores
 O painel de acompanhamento (antes o artifact "Painel SketchUp" do claude.ai)
 passa a ser `/admin/laboratorio` na plataforma do estúdio (repositório

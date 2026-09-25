@@ -90,6 +90,10 @@ Arquitetura e topologia WSL ↔ desktop Windows ↔ Docker: `docs/architecture.m
   usuário que o dono do desktop não está usando o SketchUp. Nunca ler arquivos
   pessoais da conta dele além do necessário para a tarefa.
 - Git: commits pequenos em pt-BR, só quando o usuário pedir; rodar `make check` antes.
+- Agente da Lilian: o plugin liga-se à conta na plataforma (feature
+  `platform_link`, `mcp/relay.rb`) e atende o MCP da plataforma (`/api/mcp`)
+  pela fila. Ferramenta nova = ação em `Actions`; aparece sozinha no MCP local,
+  no MCP da plataforma e no chat. Plano e status: `docs/mcp.md`, `docs/PROGRESS.md`.
 - Painel de acompanhamento = `/admin/laboratorio` da plataforma (não mais o
   artifact do claude.ai). Atualize-o com `tools/lab/lab` ao longo do trabalho.
 - Auditoria de erros: a Dev Bridge 0.2.0+ grava e envia todo erro do SketchUp

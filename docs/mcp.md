@@ -83,7 +83,31 @@ extensão no SketchUp  →  API Ruby do SketchUp / LayOut / V-Ray
   ou `npx mcp-remote`. **[a verificar]** qual cada cliente aceita hoje e se
   conectores do claude.ai (que rodam na nuvem) alcançam `localhost` (esperado: não).
 
-### Modo 2: login + túnel na nuvem (o fluxo descrito pelo usuário)
+### Modo 2: implementado em 2026-09-25 como fila (não WebSocket)
+
+O que foi construído difere do desenho abaixo: em vez de WebSocket para um
+relay sempre ligado, o plugin **busca uma fila** na plataforma do estúdio
+(`lilian-rosa-interiores`, Vercel + Postgres), porque a Vercel não segura
+conexões longas e assim não há servidor novo para manter.
+
+```
+cliente MCP / chat da plataforma → POST /api/mcp (chave lrk_ da conta)
+      → DeviceCall no Postgres → plugin busca /api/sketchup/poll (20 s parado, 1 s em uso)
+      → Service.handle_json (o mesmo protocolo do Modo 1) → /api/sketchup/result
+```
+
+- Plugin: `mcp/relay.rb` (lógica pura, testada) + feature `platform_link`
+  (menu *Conectar à plataforma…*: endereço + código de 8 caracteres gerado em
+  *Minha conta › SketchUp*; token em `Sketchup.write_default`; religa sozinho).
+- Plataforma: `/api/mcp` repassa `tools/call`/`prompts/*`, responde
+  `initialize`/`ping` e `tools/list` (cache). Verificado ponta a ponta com o
+  `Relay` + `Protocol` reais contra a plataforma local e com o MCP Inspector
+  oficial: ~1 s por chamada com o plugin acelerado.
+- **Não verificado dentro do SketchUp real** (`Sketchup::Http::Request` em
+  HTTPS, timer de 0,5 s convivendo com render). Janela modal aberta trava a
+  busca, como trava o servidor local.
+
+### Modo 2 (desenho original): login + túnel na nuvem
 
 ```
 cliente MCP (claude.ai, ChatGPT, qualquer cliente remoto)

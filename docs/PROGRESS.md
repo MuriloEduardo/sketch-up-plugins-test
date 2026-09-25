@@ -2,6 +2,20 @@
 
 Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 
+## 2026-09-25 — Agente da Lilian, etapa 1: SketchUp ligado à conta + MCP da plataforma
+
+- Plano aprovado (4 etapas): (1) ligação SketchUp↔conta + MCP da plataforma;
+  (2) chat na plataforma (AI SDK + AI Gateway, Claude/GPT/Gemini, sem chaves);
+  (3) ferramentas de arquivo/projeto, V-Ray e LayOut; (4) OAuth e outros
+  profissionais. Defaults escolhidos: cada conta liga o próprio SketchUp; apagar
+  projeto = lixeira, dentro da pasta de projetos, com confirmação.
+- Feito: `mcp/relay.rb` + feature `platform_link` (menu Conectar/Status/
+  Desconectar), 243 unitários; na plataforma `/conta/sketchup`, `/api/sketchup/*`,
+  `/api/mcp` (em produção). Verificado ponta a ponta com Relay/Protocol reais
+  em Docker contra a plataforma local e com o MCP Inspector oficial.
+- Falta ao vivo: `su-reload` + *Conectar à plataforma…* no desktop (a ponte
+  está sem responder; depende do SketchUp da Lilian).
+
 ## 2026-09-25 — Painel na plataforma + auditoria de erros (Dev Bridge 0.2.0)
 
 - Pasta de trabalho unificada: `plataforma-lilian-rosa-interiores/` com este
