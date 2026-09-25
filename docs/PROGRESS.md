@@ -2,6 +2,36 @@
 
 Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 
+## 2026-09-24 — Desktop conectado de verdade
+
+Verificado ao vivo (desktop 192.168.15.26, usuário Windows `Lilian Rosa`):
+- `setup-openssh.ps1` funcionou; a porta 22 só abriu depois de pôr a rede do
+  desktop em Privada. Chave só-túnel confirmada: login responde `tunnel-only`.
+- Dev Bridge 0.1.0 instalada pelo `.rbz` (aviso de não assinada é esperado;
+  Start não mostra mensagem).
+- `make su-ping`: SketchUp 26.1.252, Ruby 3.2.2, V-Ray 7.20.00 (Oct 01 2025),
+  API V-Ray disponível, TestUp ausente.
+- `make su-reload`: 6 arquivos enviados, `me_vray_toolkit.rb` registrado.
+- `make vray-docs-import`: 35 arquivos de `C:/Program Files/Chaos/V-Ray/V-Ray
+  for SketchUp/extension/documentation` → `docs/reference/_cache/`.
+
+Problemas vistos:
+- Um `su sync` falhou com "Remote end closed connection" logo após o ping;
+  voltou a funcionar depois que a ponte foi religada no desktop. Causa não
+  confirmada (SketchUp fechado/Stop ou falha na ponte) — observar.
+- `Connection Info` gerava `SSH=Lilian Rosa@...` sem aspas (corrigido na 0.1.1).
+
+- TestUp 2.5.4 instalado. `make su-test` falhava com ENOENT no relatório: o
+  TestUp só procura `TC_*.rb` direto na pasta da suíte (sem subpastas) e a
+  ponte passa `tests/sketchup`; o teste estava em `tests/sketchup/VRay Bridge/`.
+  Movido para `tests/sketchup/TC_VRayBridge.rb` → 3 testes, 4 asserções, Success.
+- Dev Bridge 0.1.1: erro claro quando o TestUp não roda testes (antes
+  ENOENT) e `Connection Info` com aspas em `SSH="usuario@ip"`. Validado só
+  com lint/unit; o desktop ainda roda 0.1.0 até reinstalar o `.rbz`.
+
+Próximos passos: verificar os itens "[a verificar]" de
+`docs/reference/vray-ruby-api.md` contra a doc importada e ao vivo.
+
 ## 2026-09-24 — Desktop é de outra pessoa: chave só-túnel
 
 - O notebook é pessoal do usuário; o desktop com SketchUp/V-Ray é de outra

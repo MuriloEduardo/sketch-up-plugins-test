@@ -22,6 +22,14 @@ module MuriloEduardoDev
         settings['Tests'] = [filter] if filter && !filter.empty?
         ::TestUp::API.run_suite_without_gui(suite, settings)
         flush_report(output)
+        # TestUp only globs TC_*.rb directly in the suite folder; with no tests
+        # it returns without running anything or writing a report.
+        unless File.exist?(output)
+          message = "TestUp ran no tests: put TC_*.rb files directly in #{suite} " \
+                    "(no subfolders) and check the filter (#{filter.inspect})."
+          return { ok: false, error: message }
+        end
+
         { ok: true, output: output, report: JSON.parse(File.read(output, encoding: 'bom|utf-8')) }
       end
 

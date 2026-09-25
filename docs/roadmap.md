@@ -41,9 +41,9 @@ Validar tudo que hoje está "a verificar" com SketchUp + V-Ray reais.
 
 | # | Item | Status |
 |---|---|---|
-| F1.1 | Desktop: OpenSSH + Dev Bridge (`docs/remote-desktop-setup.md`); `make su-ping` ok | em andamento |
-| F1.2 | `make vray-docs-import` e revisar `docs/reference/vray-ruby-api.md` contra a doc oficial | ideia |
-| F1.3 | Instalar TestUp 2 no desktop e rodar `make su-test` (VRayBridge) | ideia |
+| F1.1 | Desktop: OpenSSH + Dev Bridge (`docs/remote-desktop-setup.md`); `make su-ping` ok | ✅ |
+| F1.2 | `make vray-docs-import` e revisar `docs/reference/vray-ruby-api.md` contra a doc oficial | em andamento (doc importada) |
+| F1.3 | Instalar TestUp 2 no desktop e rodar `make su-test` (VRayBridge) | ✅ |
 | F1.4 | Mapear *user data* ↔ core (exportar `.vropt`/`.vrmat`) para settings e VRayMtl | ideia |
 | F1.5 | Núcleo de travessia do modelo (transformação, visibilidade, herança de material, PID) testado | ideia |
 | F1.6 | Motor de eventos de render (subscriber, fila, estados, timeouts) sem bloquear a UI | ideia |

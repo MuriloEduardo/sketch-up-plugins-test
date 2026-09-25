@@ -14,7 +14,7 @@ Sketchup.require('me_dev_bridge/testup_runner')
 module MuriloEduardoDev
   module DevBridge
 
-    BRIDGE_VERSION = '0.1.0'
+    BRIDGE_VERSION = '0.1.1'
     MENU_TITLE = 'Dev Bridge (DEV ONLY)'
 
     # @return [String] %APPDATA%/MuriloEduardoDev
@@ -76,7 +76,8 @@ module MuriloEduardoDev
     def self.connect_command
       host = lan_addresses.first || '<ip-desta-maquina>'
       user = ENV.fetch('USERNAME', '<usuario-windows>')
-      "make su-connect SSH=#{user}@#{host} TOKEN=#{config.token} KEY=~/.ssh/id_ed25519_sketchup"
+      # Quoted: Windows user names may contain spaces ("Jane Doe").
+      "make su-connect SSH=\"#{user}@#{host}\" TOKEN=#{config.token} KEY=~/.ssh/id_ed25519_sketchup"
     end
 
     def self.start
