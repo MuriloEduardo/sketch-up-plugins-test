@@ -109,6 +109,20 @@ carimbo e índice são desenhados por código (não dependem do template nem do
 auto-texto do usuário, que variam por instalação e idioma). Template do usuário
 e auto-texto de cena/escala ficam para uma próxima versão (P4.4).
 
+### 2026-09-25 — Comunicação por portas e adaptadores: ações + eventos
+Pedido do usuário (base profissional, modular, pouco verbosa, que escale).
+Tudo o que o sistema faz é uma **ação** registrada uma vez (esquema, anotações,
+handler); tudo o que acontece é um **evento** num barramento publica/assina.
+Menu, HTTP local, proxy de dev e o futuro relay são adaptadores finos que
+chamam `Actions.call` ou `Mcp::Service.handle_json`. Motivo: um transporte
+novo ou um consumidor novo (painel, notificações MCP, log) não mexe em
+nenhuma ferramenta. Ferramentas ficam em um arquivo por grupo.
+
+### 2026-09-25 — `Random.urandom` em vez de `SecureRandom` no produto
+O RuboCop-SketchUp avisa: `SecureRandom` usa OpenSSL, que no Windows pode
+congelar o SketchUp por minutos. Token e ids de sessão usam `Random.urandom`
+(gerador do sistema operacional, sem OpenSSL).
+
 ### 2026-09-25 — Template do usuário: carimbo dele, viewport no maior espaço livre
 Com template, o documento nasce de `Document.new(template)`, mantém só a
 página que mostra camadas compartilhadas (a "interna") e cria as demais com

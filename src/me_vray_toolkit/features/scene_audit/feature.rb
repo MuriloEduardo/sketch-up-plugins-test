@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+Sketchup.require('me_vray_toolkit/core/actions')
 Sketchup.require('me_vray_toolkit/core/commands')
+Sketchup.require('me_vray_toolkit/core/events')
 Sketchup.require('me_vray_toolkit/core/html')
 Sketchup.require('me_vray_toolkit/core/i18n')
 Sketchup.require('me_vray_toolkit/core/report_dialog')
@@ -59,6 +61,19 @@ module MuriloEduardo
           return true if File.exist?(path)
 
           !model_folder.nil? && File.exist?(File.join(model_folder, path))
+        end
+
+        Actions.register(
+            name: 'audit_scene', group: :reports, read_only: true,
+            description: 'Checks the open model for problems: files V-Ray cannot find, oversized textures, ' \
+                         'unused materials, V-Ray not loaded. Returns findings (error, warning, info) and a summary.'
+          ) do |_params|
+          analyzer = analyze(Sketchup.active_model)
+          findings = analyzer.findings.map do |finding|
+            { severity: finding.severity, code: finding.code, subject: finding.subject,
+              detail: I18n.t(STRINGS, finding.code, **finding.params), }
+          end
+          { summary: analyzer.summary, findings: findings }
         end
 
         Commands.register(id: :scene_audit, title: -> { I18n.t(STRINGS, :menu_item) }, order: 10) { run }

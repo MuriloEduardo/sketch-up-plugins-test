@@ -10,7 +10,7 @@ module MuriloEduardo
       NAME = 'V-Ray Toolkit'
 
       # Folders under features/, loaded in this order.
-      FEATURES = %w[scene_audit layout_sheets render_quality].freeze
+      FEATURES = %w[agent_connection scene_audit layout_sheets render_quality].freeze
 
     end
   end

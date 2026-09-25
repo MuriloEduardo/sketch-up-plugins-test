@@ -27,7 +27,7 @@ class ProductBuilder
   SOURCE_NAMESPACE = 'VRayToolkit'
 
   # Copiados para todo produto (pilares + carregador).
-  SHARED = %w[main.rb core sketchup vray].freeze
+  SHARED = %w[main.rb core mcp sketchup vray].freeze
 
   ID_PATTERN = /\Ame_[a-z0-9_]+\z/
   NAMESPACE_PATTERN = /\A[A-Z][A-Za-z0-9]*\z/

@@ -67,8 +67,19 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 - Painel: versão mobile first, imagens em tela cheia (setas, Esc, arrastar
   com o dedo) e visualizador 3D (three.js r128) do `board/model3d`.
 
-Próximo: MCP (pedido do usuário: máximo de ferramentas) — arquitetura em
-`docs/mcp.md`, catálogo cobrindo todas as classes da API, base do servidor. + auto-texto de cena/escala (P4.4),
+- **MCP Modo 1 (servidor local) implementado**: `core/actions.rb` +
+  `core/events.rb` (portas e adaptadores), `mcp/` (protocolo, HTTP, serviço,
+  11 ferramentas em grupos), feature `agent_connection` (menu + janela com
+  comandos para Claude Code/Cursor/VS Code/Claude Desktop), proxy de dev
+  `tools/devbridge/mcp_proxy.py`. 161 testes unitários.
+- Ao vivo: pelo proxy, initialize → tools/list (11) → chamadas ok, imagem da
+  vista, erro legível; servidor HTTP no Windows respondeu 200 (token certo),
+  401 (errado), 403 (Origin de outro site). Servidor deixado desligado.
+- Achado: threads Ruby dentro do SketchUp só avançam nos ticks do timer
+  (sonda HTTP interna levou ~15 s); clientes externos não sofrem isso.
+
+Próximo: catálogo com teste de cobertura (todas as classes da API) e os
+grupos geometria, materiais, tags, componentes, câmera, V-Ray, LayOut. + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap

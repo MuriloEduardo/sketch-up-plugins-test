@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+Sketchup.require('me_vray_toolkit/core/actions')
 Sketchup.require('me_vray_toolkit/core/commands')
+Sketchup.require('me_vray_toolkit/core/events')
 Sketchup.require('me_vray_toolkit/core/i18n')
 Sketchup.require('me_vray_toolkit/core/params')
 Sketchup.require('me_vray_toolkit/features/layout_sheets/output_path')
@@ -96,6 +98,15 @@ module MuriloEduardo
         end
 
         private_class_method :plan, :no_scenes_message, :names, :t
+
+        Actions.register(
+            name: 'generate_layout_sheets', group: :layout,
+            description: 'Creates a LayOut document next to the saved model with one sheet per scene (viewport, ' \
+                         'title block or the user\'s template, automatic scale for orthographic scenes), an ' \
+                         'optional sheet index and a PDF. Never overwrites existing files. The model must be ' \
+                         'saved; scenes added after the last save are skipped.',
+            schema: SCHEMA
+          ) { |params| generate(Sketchup.active_model, params) }
 
         Commands.register(id: :layout_sheets, title: -> { I18n.t(STRINGS, :menu_item) }, order: 15) { Dialog.run }
 

@@ -7,16 +7,23 @@ module MuriloEduardo
 
         # Input of the {LayoutSheets.generate} action (see {Params}).
         SCHEMA = {
-          prefix: { type: :string, default: '' },
-          paper: { type: :enum, values: PageGeometry::PAPERS.keys, default: 'A3' },
+          prefix: { type: :string, default: '',
+                    description: 'Only scenes whose name starts with one of these comma separated prefixes ' \
+                                 '(any case), e.g. "P., E."; empty = every scene', },
+          paper: { type: :enum, values: PageGeometry::PAPERS.keys, default: 'A3',
+                   description: 'Paper size when the toolkit draws the title block', },
           orientation: { type: :enum, values: %w[landscape portrait], default: 'landscape' },
-          render_mode: { type: :enum, values: %w[raster hybrid vector], default: 'raster' },
-          scale: { type: :enum, values: Scale::CHOICES, default: 'auto' },
-          index_sheet: { type: :boolean, default: true },
-          export_pdf: { type: :boolean, default: true },
+          render_mode: { type: :enum, values: %w[raster hybrid vector], default: 'raster',
+                         description: 'How LayOut draws the viewports; vector/hybrid are sharper but slower', },
+          scale: { type: :enum, values: Scale::CHOICES, default: 'auto',
+                   description: 'Scale of orthographic scenes; auto picks the largest standard scale that fits', },
+          index_sheet: { type: :boolean, default: true, description: 'Add a first sheet listing all sheets' },
+          export_pdf: { type: :boolean, default: true, description: 'Also export a PDF next to the model' },
           # A .layout whose frame and title block every sheet uses; empty = the
           # toolkit draws its own (then paper and orientation apply).
-          template: { type: :string, default: '' },
+          template: { type: :string, default: '',
+                      description: 'Path of a LayOut template (.layout) whose title block every sheet uses; ' \
+                                   'empty = the toolkit draws its own', },
         }.freeze
 
         # A text on a sheet; `x`/`y` is its top left corner in paper inches.

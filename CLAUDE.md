@@ -49,7 +49,8 @@ src/me_vray_toolkit.rb          registro da extensão (SÓ registro — regra do
 src/me_vray_toolkit/            produto COMPLETO (todas as features); ver docs/platform.md
   main.rb, product.rb           carregador + lista de features (FEATURES)
   core/                         pilares genéricos: Commands, Menu, I18n, Html, ReportDialog,
-                                Params (esquema de ações, P8), InputForm
+                                Params, InputForm, Actions (ações tipadas), Events (barramento)
+  mcp/                          servidor MCP local (protocolo, HTTP, serviço) + tools/<grupo>.rb
   sketchup/                     ModelData (fatos do modelo como Hashes)
   vray/                         VRayBridge (único ponto que toca ::VRay) + lógica pura
   features/<nome>/              uma funcionalidade; só usa pilares, nunca outra feature

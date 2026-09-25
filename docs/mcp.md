@@ -2,8 +2,55 @@
 
 Proposta de 2026-09-25 (pedido do usuário: expandir ao máximo as ferramentas
 que um agente pode usar, das simples às complexas, sem ignorar nenhuma parte
-da API). Estado: **arquitetura**; nada implementado além da base P8
-(`core/params.rb`, ações tipadas) e do `MeshExport`.
+da API). Estado: **Modo 1 implementado e verificado ao vivo** (11 ferramentas);
+catálogo completo e Modo 2 pendentes.
+
+## Arquitetura de comunicação (portas e adaptadores)
+
+Pedido do usuário: base modular, reutilizável, pouco verbosa, que escale em
+eventos e abrangência. Dois eixos, e só eles:
+
+```
+                 ┌──────────── Ações (core/actions.rb) ────────────┐
+ adaptadores     │ nome · descrição · esquema (Params) · handler   │
+ de entrada ───► │ anotações (read_only, destructive, idempotent)  │
+ menu, MCP HTTP, └──────────────────────┬──────────────────────────┘
+ proxy dev,                             │ publica
+ relay (futuro)                         ▼
+                 ┌──────────── Eventos (core/events.rb) ───────────┐
+                 │ "action.completed" · "action.failed" · "mcp.*"  │ ──► assinantes:
+                 │ (depois: "model.*", "render.*", "selection.*")  │     janela do agente,
+                 └─────────────────────────────────────────────────┘     notificações MCP,
+                                                                         relay, painel, log
+```
+
+- **Ação** = tudo o que o sistema *faz*. Registrada uma vez; qualquer
+  transporte a chama (`Actions.call(nome, entrada, source:)`). Nenhuma lógica
+  por transporte.
+- **Evento** = tudo o que *acontece*. Publicado uma vez; quem quiser assina
+  por prefixo. Assinante com erro não derruba os outros; histórico curto em
+  memória (`Events.recent`).
+- **Transporte** = adaptador fino: `Mcp::Endpoint` (HTTP local),
+  `Mcp::Service.handle_json` (entrada genérica usada pelo proxy de dev e, no
+  futuro, pelo relay), comandos de menu.
+- **Grupos de ferramentas** = um arquivo por grupo em `mcp/tools/`
+  (`extend Support` para os utilitários comuns). Crescer = arquivo novo.
+
+## Implementado (2026-09-25)
+
+| Peça | Arquivo | Verificação |
+|---|---|---|
+| Esquema + JSON Schema (tipos string/boolean/integer/number/enum/array, obrigatório, descrição) | `core/params.rb` | unit |
+| Registro de ações + eventos por chamada | `core/actions.rb`, `core/events.rb` | unit + ao vivo |
+| JSON-RPC do MCP (initialize com negociação de versão, ping, tools/list, tools/call, lotes, notificações) | `mcp/protocol.rb`, `tool_listing.rb`, `tool_result.rb` | unit + ao vivo |
+| Streamable HTTP local: POST `/mcp`, token Bearer, `Origin` local, 202/401/403/404/405, `Mcp-Session-Id` | `mcp/http.rb`, `endpoint.rb`, `server.rb` | unit (TCP real) + ao vivo no Windows (200/401/403) |
+| Serviço: token (`Random.urandom`), portas 7878–7887, início automático | `mcp/service.rb` | ao vivo |
+| Janela "Conectar Agente de IA (MCP)" com comandos para Claude Code, Cursor, VS Code, Claude Desktop | `features/agent_connection/` | unit |
+| Ferramentas: `model_info`, `list_scenes`, `create_scene`, `activate_scene`, `list_materials`, `list_tags`, `list_components`, `get_selection`, `capture_view`, `audit_scene`, `generate_layout_sheets` | `mcp/tools/*.rb`, features | ao vivo pelo proxy |
+| Proxy stdio de desenvolvimento (cliente MCP → Dev Bridge → SketchUp do desktop) | `tools/devbridge/mcp_proxy.py` | ao vivo |
+
+Para usar o proxy no Claude Code (desenvolvimento):
+`claude mcp add sketchup-dev -- python3 tools/devbridge/mcp_proxy.py`.
 
 ## Como o usuário conecta
 

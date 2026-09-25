@@ -131,8 +131,8 @@ do desktop com V-Ray e LayOut, através de ferramentas de alto nível
 
 | # | Funcionalidade | Status |
 |---|---|---|
-| L1 | Pilar P8: cada feature expõe ações tipadas (nome, descrição, esquema de entrada/saída), chamadas pela UI e pelo MCP | ideia |
-| L2 | Servidor MCP local do produto: só 127.0.0.1, token, **lista fechada de ações** (sem `eval`; a Dev Bridge nunca é reaproveitada no produto). Transporte a decidir: HTTP dentro do SketchUp ou processo stdio separado. Confirmar a política do EW para servidor local **[a verificar]** | ideia |
+| L1 | Pilar P8: cada feature expõe ações tipadas (nome, descrição, esquema de entrada/saída), chamadas pela UI e pelo MCP | feito (`core/actions.rb` + eventos) |
+| L2 | (feito: Modo 1, 11 ferramentas, verificado ao vivo) Servidor MCP local do produto: só 127.0.0.1, token, **lista fechada de ações** (sem `eval`; a Dev Bridge nunca é reaproveitada no produto). Transporte a decidir: HTTP dentro do SketchUp ou processo stdio separado. Confirmar a política do EW para servidor local **[a verificar]** | ideia |
 | L3 | Ferramentas de leitura: modelo, cenas, tags, materiais, V-Ray, auditoria, quantitativos, captura do viewport | ideia |
 | L4 | Ferramentas de projeto/modelagem: geometria básica, componentes, tags, cenas, câmeras (com desfazer por operação) | ideia |
 | L5 | Ferramentas de render: materiais V-Ray, luzes, configurações por cena, render/lote, salvar imagens | ideia |
