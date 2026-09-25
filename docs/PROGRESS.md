@@ -107,9 +107,24 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 - Recarga de dev: métodos removidos de um arquivo continuam no módulo até
   reiniciar o SketchUp (achado ao mover `render_job` para o `Support`).
 
-Próximo: **dor da Lilian** — ajustar parâmetros de render conforme a luz
-(sol, ambiente, luzes artificiais): exposição, balanço de branco, sol/céu,
-GI, color mapping, com presets por cenário. Depois: animações (SketchUp e V-Ray). + auto-texto de cena/escala (P4.4),
+- **Dor da Lilian (parâmetros por iluminação)**: `get/set_render_parameters`
+  (35 parâmetros com nomes amigáveis: câmera física, auto exposição e
+  balanço de branco, Reinhard/burn, GI e AO, sol/céu, ambiente; esquema do
+  MCP gerado da tabela), `set_time_of_day`, `list/apply_lighting_preset`
+  (exterior_day, exterior_golden_hour, overcast, interior_daylight,
+  interior_artificial, studio). Cômodo de teste (temp): padrão = escuro,
+  `interior_daylight` = bem exposto, noturno com luminária = cor quente
+  natural. Aberto: janela clara à noite (céu ligado ao sol ainda aparece).
+- Render não respeitou `progressive_maxTime` num interior escuro: o job agora
+  para o V-Ray no limite e **salva a imagem** ("time limit reached").
+- **Início/fim de render sempre visíveis** (pedido do usuário): feature
+  `render_notifications` (notificação no SketchUp ao começar e terminar, com
+  botão "Abrir pasta"; barra de status nas etapas) e `started_at`/`finished_at`
+  em todo job. `Jobs` publica `job.<estado>` só na transição e `job.progress`
+  no resto.
+
+Próximo: céu escuro no preset noturno (textura de fundo), denoiser, depois
+animações (transições de cena do SketchUp, turntable com V-Ray). + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap

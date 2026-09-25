@@ -217,6 +217,11 @@ groups:
       get_render_settings: done
       set_render_settings: done
       apply_quality_preset: planned
+      get_render_parameters: done
+      set_render_parameters: done
+      set_time_of_day: done
+      list_lighting_presets: done
+      apply_lighting_preset: done
       list_vray_materials: done
       create_vray_material: done
       update_vray_material: done

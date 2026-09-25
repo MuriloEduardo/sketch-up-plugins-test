@@ -74,9 +74,10 @@ Naming/ClassAndModuleCamelCase:
   Exclude:
     - tests/sketchup/**/*
 
-# Tabelas de tradução são dados (uma linha por texto e idioma). Fachada única do V-Ray (regra .claude/rules/vray-api.md: só este arquivo
+# Tabelas de tradução e de parâmetros V-Ray são dados (uma linha por item). Fachada única do V-Ray (regra .claude/rules/vray-api.md: só este arquivo
 # toca ::VRay); dividi-la espalharia o acesso à API.
 Metrics/ModuleLength:
   Exclude:
     - src/*/features/*/strings.rb
     - src/*/vray/bridge.rb
+    - src/*/vray/render_parameter_definitions.rb

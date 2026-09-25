@@ -20,6 +20,8 @@ module MuriloEduardo
         STOPPED = %i[idleStopped].freeze
         # Step progress closer than this is not republished.
         PROGRESS_STEP = 0.1
+        # Extra seconds after max_minutes before we stop V-Ray ourselves.
+        GRACE_SECONDS = 10
 
         # Receives the renderer's events and forwards them to the job.
         class Listener
@@ -63,6 +65,7 @@ module MuriloEduardo
             Jobs.update(job.id, state: :running, message: 'Exporting the scene to V-Ray')
             @active[job.id][:renderer] = VRayBridge.start_render(model: model, width: width, height: height,
                                                                  max_minutes: max_minutes, listener: listener)
+            limit_time(job.id, max_minutes) if max_minutes
             job
           rescue StandardError => error
             fail_job(job, error) if job
@@ -117,13 +120,26 @@ module MuriloEduardo
 
           private
 
+          # V-Ray does not always honor the progressive time limit (seen on
+          # a dark interior on 7.20): stop it ourselves and keep the image.
+          def limit_time(job_id, max_minutes)
+            UI.start_timer((max_minutes * 60) + GRACE_SECONDS, false) do
+              entry = @active[job_id]
+              if entry
+                entry[:time_up] = true
+                VRayBridge.stop_render(entry[:renderer])
+              end
+            end
+          end
+
           def finish(job_id, state)
             entry = @active.delete(job_id) or return
             VRayBridge.release_render(entry[:renderer], entry[:listener])
-            if SUCCESS.include?(state)
+            if SUCCESS.include?(state) || (STOPPED.include?(state) && entry[:time_up])
               FileUtils.mkdir_p(File.dirname(entry[:output]))
               size = VRayBridge.save_render(entry[:renderer], entry[:output])
-              Jobs.update(job_id, state: :done, progress: 1.0, message: 'Done',
+              message = entry[:time_up] ? 'Done (time limit reached)' : 'Done'
+              Jobs.update(job_id, state: :done, progress: 1.0, message: message,
                                   result: size.merge(path: entry[:output]))
             elsif STOPPED.include?(state)
               Jobs.update(job_id, state: :cancelled, message: 'Stopped')

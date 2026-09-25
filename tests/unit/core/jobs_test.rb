@@ -25,6 +25,23 @@ class JobsTest < Minitest::Test
     assert_equal({ path: 'C:/r.png' }, Events.recent('job.done').last.payload[:result])
   end
 
+  def test_updates_in_the_same_state_are_progress
+    job = Jobs.create(kind: 'render')
+    Jobs.update(job.id, state: :running)
+    Jobs.update(job.id, message: 'Light cache')
+
+    assert_equal(%w[job.queued job.running job.progress], Events.recent('job.').map(&:topic))
+  end
+
+  def test_times_are_reported
+    job = Jobs.create(kind: 'render')
+    Jobs.update(job.id, state: :done)
+
+    data = Jobs.fetch(job.id).to_h
+    assert_match(/\A\d{4}-\d\d-\d\dT/, data[:started_at])
+    refute_nil(data[:finished_at])
+  end
+
   def test_finished_jobs_cannot_change
     job = Jobs.create(kind: 'render')
     Jobs.update(job.id, state: :cancelled)

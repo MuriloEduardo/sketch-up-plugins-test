@@ -3,6 +3,8 @@
 Sketchup.require('me_vray_toolkit/vray/material_parameters')
 Sketchup.require('me_vray_toolkit/vray/plugin_path')
 Sketchup.require('me_vray_toolkit/vray/quality_preset')
+Sketchup.require('me_vray_toolkit/vray/render_parameter_definitions')
+Sketchup.require('me_vray_toolkit/vray/render_parameters')
 
 module MuriloEduardo
   module VRayToolkit
@@ -424,6 +426,39 @@ module MuriloEduardo
         values
       end
       private_class_method :read_parameters
+
+      # @return [Hash{Array(String, Symbol) => Object}] every readable
+      #   {RenderParameters} value; colors as arrays of floats 0-1
+      def self.read_render_parameters
+        current_scene = scene
+        RenderParameters.readable.each_with_object({}) do |(plugin_name, parameter), readings|
+          plugin = current_scene[plugin_name] or next
+          value = plugin[parameter]
+          readings[[plugin_name, parameter]] = value.respond_to?(:to_a) && !value.is_a?(Array) ? value.to_a : value
+        end
+      end
+
+      # @param values [Hash{Symbol => Object}] {RenderParameters} friendly values
+      # @raise [ArgumentError] on invalid values or a missing plugin
+      def self.write_render_parameters(values)
+        writes = RenderParameters.to_vray(values)
+        change do |current_scene|
+          writes.each do |plugin_name, parameter, raw|
+            plugin = current_scene[plugin_name] or raise ArgumentError, "V-Ray scene has no #{plugin_name}"
+            plugin[parameter] = coerce_like(plugin[parameter], raw)
+          end
+        end
+      end
+
+      # Keeps the stored type: some options are booleans in this V-Ray while
+      # the plugin reference documents them as integers.
+      def self.coerce_like(current, raw)
+        return ::VRay::Color.new(*raw) if raw.is_a?(Array)
+        return raw != 0 if [true, false].include?(current) && raw.is_a?(Integer)
+
+        raw
+      end
+      private_class_method :coerce_like
 
       # Snapshot of the environment, useful for diagnostics and bug reports.
       #

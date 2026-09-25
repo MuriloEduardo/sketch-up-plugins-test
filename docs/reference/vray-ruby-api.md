@@ -115,6 +115,23 @@ Materiais por script, verificado ao vivo **[7.20, 2026-09-25]**:
   `/Nome/BRDFVRayMtl` (outro nome!): ache o BRDF por `material[:brdf]`, não
   pelo nome.
 
+Iluminação e exposição, verificado ao vivo **[7.20, 2026-09-25]**:
+- `/CameraPhysical.exposure` vem como **booleano** no 7.20 (a referência diz
+  int 0/1/2); `f_number`, `shutter_speed` (1/x), `ISO`, `white_balance`
+  (Color), `vignetting`, `exposure_value`.
+- `/SettingsCamera`: `auto_exposure` (0 off, 1 central, 2 histograma),
+  `auto_white_balance` (0 off, 1 temperatura, 2 RGB), ambos exigem GI light
+  cache; `auto_exposure_compensation` em f-stops. Balanço automático por
+  temperatura deixou um interior com lâmpada quente **azulado demais**.
+- `/SettingsColorMapping`: `type` 6 = Reinhard (padrão), `bright_mult` = burn.
+- `/SettingsGI`: `primary_engine` 2 (brute force), `secondary_engine` 3 (light cache).
+- Sol: `/SunLight` (`intensity_multiplier`, `size_multiplier`, `turbidity`,
+  `ozone`, `filter_color`, `ground_albedo`); posição pelo `ShadowTime` do
+  SketchUp, que está no fuso do modelo (`TZOffset`).
+- `progressive_maxTime` **não foi respeitado** num interior escuro (render
+  seguiu por 6+ min com limite de 0,4): pare por timer (`renderer.stop`) e
+  salve `renderer.image`.
+
 Estados do renderer (doc): `:idleInitialized`, `:idleStopped`, `:idleError`,
 `:idleFrameDone`, `:idleDone`, `:preparing`, `:rendering`, `:renderingPaused`,
 `:renderingAwaitingChanges`.
