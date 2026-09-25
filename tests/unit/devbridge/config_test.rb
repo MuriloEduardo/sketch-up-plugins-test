@@ -60,4 +60,15 @@ class DevBridgeConfigTest < Minitest::Test
     assert_equal(new, Config.new(@path).token)
   end
 
+  def test_error_audit_destination_is_saved_and_optional
+    config = Config.new(@path)
+    assert_nil(config.lab_url)
+
+    config.set_lab(url: ' https://lilianrosa.com.br/ ', token: 'abc')
+    assert_equal(['https://lilianrosa.com.br', 'abc'], Config.new(@path).then { |c| [c.lab_url, c.lab_token] })
+
+    config.set_lab(url: '', token: '')
+    assert_nil(Config.new(@path).lab_token)
+  end
+
 end

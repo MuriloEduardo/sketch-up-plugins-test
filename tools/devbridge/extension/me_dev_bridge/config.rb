@@ -39,6 +39,19 @@ module MuriloEduardoDev
       def autostart? = @data.fetch('autostart') == true
       def token = @data.fetch('token')
 
+      # Studio platform that receives the error audit
+      # (e.g. https://lilianrosa.com.br); nil keeps errors only in the local journal.
+      def lab_url = presence(@data['lab_url'])
+      def lab_token = presence(@data['lab_token'])
+
+      # @param url [String, nil]
+      # @param token [String, nil]
+      def set_lab(url:, token:)
+        @data['lab_url'] = presence(url)&.chomp('/')
+        @data['lab_token'] = presence(token)
+        save
+      end
+
       # @param value [Boolean] start the bridge when SketchUp loads it
       def autostart=(value)
         @data['autostart'] = value == true
@@ -53,6 +66,11 @@ module MuriloEduardoDev
       end
 
       private
+
+      def presence(value)
+        text = value.to_s.strip
+        text.empty? ? nil : text
+      end
 
       def load_or_create
         stored = File.exist?(path) ? JSON.parse(File.read(path)) : {}

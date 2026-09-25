@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'socket'
-
 Sketchup.require('me_dev_bridge/security')
 Sketchup.require('me_dev_bridge/http')
 Sketchup.require('me_dev_bridge/evaluator')
@@ -10,11 +8,21 @@ Sketchup.require('me_dev_bridge/workspace')
 Sketchup.require('me_dev_bridge/routes')
 Sketchup.require('me_dev_bridge/server')
 Sketchup.require('me_dev_bridge/testup_runner')
+Sketchup.require('me_dev_bridge/error_journal')
+Sketchup.require('me_dev_bridge/console_parser')
+Sketchup.require('me_dev_bridge/session_markers')
+Sketchup.require('me_dev_bridge/port_owner')
+Sketchup.require('me_dev_bridge/error_uploader')
+Sketchup.require('me_dev_bridge/toolkit_errors')
+Sketchup.require('me_dev_bridge/error_context')
+Sketchup.require('me_dev_bridge/console_tap')
+Sketchup.require('me_dev_bridge/diagnostics')
+Sketchup.require('me_dev_bridge/menu')
 
 module MuriloEduardoDev
   module DevBridge
 
-    BRIDGE_VERSION = '0.1.2'
+    BRIDGE_VERSION = '0.2.0'
     MENU_TITLE = 'Dev Bridge (DEV ONLY)'
 
     # @return [String] %APPDATA%/MuriloEduardoDev
@@ -64,65 +72,49 @@ module MuriloEduardoDev
         vray_version: vray&.version,
         vray_api_available: defined?(::VRay::Context) ? true : false,
         testup_available: defined?(::TestUp::API) ? true : false,
+        diagnostics: Diagnostics.summary,
       }
     end
 
-    # @return [Array<String>] private IPv4 addresses of this machine
-    def self.lan_addresses
-      Socket.ip_address_list.select(&:ipv4_private?).map(&:ip_address)
-    end
-
-    # @return [String] command to run on the development machine
-    def self.connect_command
-      host = lan_addresses.first || '<ip-desta-maquina>'
-      user = ENV.fetch('USERNAME', '<usuario-windows>')
-      # Quoted: Windows user names may contain spaces ("Jane Doe").
-      "make su-connect SSH=\"#{user}@#{host}\" TOKEN=#{config.token} KEY=~/.ssh/id_ed25519_sketchup"
-    end
-
-    def self.start
+    # Starts the server. A failure is recorded in the error audit with the
+    # process holding the port, and explained to the user.
+    #
+    # @param interactive [Boolean] false at SketchUp startup: the dialog then
+    #   waits until SketchUp finished loading
+    def self.start(interactive: true)
       server.start
-    rescue SystemCallError => error
-      UI.messagebox("#{MENU_TITLE}: could not listen on #{config.bind}:#{config.port}.\n#{error.message}")
+    rescue StandardError => error
+      owner = error.is_a?(Errno::EADDRINUSE) ? PortOwner.lookup(config.port) : nil
+      Diagnostics.record_exception(error, source: 'bridge', context: { action: 'start', port: config.port,
+                                                                       interactive: interactive, port_owner: owner, })
+      message = PortOwner.explain(error, owner, "#{config.bind}:#{config.port}")
+      return UI.messagebox(message, MB_MULTILINE, MENU_TITLE) if interactive
+
+      UI.start_timer(1, false) { UI.messagebox(message, MB_MULTILINE, MENU_TITLE) }
     end
 
     def self.stop
       server.stop
     end
 
-    def self.show_connection_info
-      command = connect_command
-      UI.set_clipboard_data(command) if UI.respond_to?(:set_clipboard_data)
-      UI.messagebox(
-          "Status: #{server.running? ? 'running' : 'stopped'} (127.0.0.1:#{config.port}, SSH tunnel only)\n" \
-          "LAN addresses: #{lan_addresses.join(', ')}\n\n" \
-          "Run on the development machine (copied to clipboard):\n#{command}\n\n" \
-          'Keep this token private. Regenerate it to revoke access.',
-          MB_MULTILINE, MENU_TITLE
-        )
-    end
-
-    def self.regenerate_token
-      running = server.running?
-      stop
-      config.regenerate_token
+    # A new token means a new server (the routes hold the token).
+    def self.reset_server
       @server = nil
-      start if running
-      show_connection_info
     end
 
     unless file_loaded?(__FILE__)
-      workspace.activate
-      start if config.autostart?
-
-      menu = UI.menu('Extensions').add_submenu(MENU_TITLE)
-      menu.add_item('Connection Info...') { show_connection_info }
-      menu.add_item('Start') { start }
-      menu.add_item('Stop') { stop }
-      autostart_item = menu.add_item('Start Automatically') { config.autostart = !config.autostart? }
-      menu.set_validation_proc(autostart_item) { config.autostart? ? MF_CHECKED : MF_UNCHECKED }
-      menu.add_item('Regenerate Token...') { regenerate_token }
-      menu.add_item('Open Data Folder') { UI.openURL("file:///#{data_dir}") }
+      # Diagnostics first, so anything that fails below is recorded.
+      Diagnostics.install(data_dir: data_dir, config: config)
+      # Extensions under development must not keep the bridge from starting.
+      begin
+        workspace.activate
+      rescue StandardError, ScriptError => error
+        Diagnostics.record_exception(error, source: 'bridge', context: { action: 'workspace.activate' })
+        warn("[Dev Bridge] workspace failed to load: #{error.class}: #{error.message}")
+      end
+      Diagnostics.watch_toolkit
+      start(interactive: false) if config.autostart?
+      BridgeMenu.install
       file_loaded(__FILE__)
     end
 
