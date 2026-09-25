@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+Sketchup.require('me_vray_toolkit/vray/bridge')
+
 module MuriloEduardo
   module VRayToolkit
     module Mcp
@@ -37,6 +39,17 @@ module MuriloEduardo
           rescue StandardError
             model.abort_operation
             raise
+          end
+
+          # @raise [ArgumentError] (a readable tool error) without V-Ray
+          def require_vray
+            raise ArgumentError, 'V-Ray for SketchUp is not loaded in this SketchUp' unless VRayBridge.available?
+          end
+
+          # @return [Hash] render settings with the quality preset as a label
+          def render_settings
+            values = VRayBridge.render_settings
+            values.merge(quality: VRayBridge::QualityPreset::LABELS[values.delete(:quality_preset)])
           end
 
           # @param entity [Sketchup::Drawingelement]

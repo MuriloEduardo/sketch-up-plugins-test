@@ -65,6 +65,27 @@ Comportamentos verificados ao vivo **[7.20]** (2026-09-24, auditoria de cena):
 - Um VRayMtl criado por script (`MtlSingleBRDF` + `BRDFVRayMtl` filho) é
   sincronizado para um material do SketchUp com o mesmo nome.
 
+Render por script, verificado ao vivo **[7.20, 2026-09-25]**:
+- `VRay::VRayRenderer.new` + `VRay::ModelExporter.new(model:, scene:, renderer:).export_model(view:)`
+  + `renderer.start` renderiza **sem** mexer no frame buffer da interface nem nas
+  configurações salvas; 90 plugins exportados no modelo de teste.
+- Ajustes só deste render, no renderer (core): `renderer.grep(:SettingsOutput).first[:img_width]`,
+  `[:img_height]`; `grep(:SettingsImageSampler).first[:progressive_maxTime]` (minutos).
+- `renderer.subscribe(obj)` entrega `on_state_changed` (`:idleInitialized` →
+  `:preparing` → `:rendering` → `:idleDone`) e `on_progress(renderer, msg, n, total, instant)`
+  no thread principal. O progresso é **por etapa** ("Compiling adaptive
+  lights…"), não do render inteiro.
+- Imagem: `renderer.image(do_color_correct: true, strip_alpha: true).save(path, format: :png)`.
+  800×450 com limite de 0,3 min: 44 s no desktop de teste.
+- **Configurações vão para o .skp ao salvar o modelo.** Mudanças na cena
+  (`scene.change`), inclusive `/SettingsOutput.img_width/img_height` e
+  `/SettingsOptions.progressive_noise_limit`, somem se o contexto for
+  desativado (`Context#delete`) antes de `model.save`; depois de salvar,
+  sobrevivem. Envolver em `start_operation` não muda isso. Consequência:
+  nunca `VRayBridge.deactivate` depois de alterar a cena sem salvar.
+  (O flag `user_data` de `Plugin#each` não marca `img_width`, mas ele
+  persiste mesmo assim.)
+
 Estados do renderer (doc): `:idleInitialized`, `:idleStopped`, `:idleError`,
 `:idleFrameDone`, `:idleDone`, `:preparing`, `:rendering`, `:renderingPaused`,
 `:renderingAwaitingChanges`.

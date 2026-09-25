@@ -83,7 +83,7 @@ O pedido mais recorrente e sem produto dedicado.
 | P1.3 | **Fila multi-arquivo**: renderizar cenas de vários `.skp` em sequência (noite toda) | Chaos 112672 (script "usa classes internas") | ideia |
 | P1.4 | **Pacote de passes/vistas**: exportar imagens de todas as cenas com variações de estilo (arestas on/off, materiais, máscaras) | 315200 | ideia |
 | P1.5 | **Renderizar só o objeto selecionado** (demais com Wrapper matte/alpha −1) para catálogos/sprites | SketchUp 131551 | ideia |
-| P1.6 | Presets por job (qualidade, resolução, câmera, saída), relatório de tempo por imagem | Chaos 116721, 104132 | ideia |
+| P1.6 | Presets por job (qualidade, resolução, câmera, saída), relatório de tempo por imagem | Chaos 116721, 104132 | em andamento: render como job (tamanho, tempo, cena) e configurações via MCP, verificados ao vivo |
 | P1.7 | Integração com Chaos Cloud / render farm (avaliar API) | Chaos 115622 | ideia |
 
 ### Fase 3 — Produto 2: **V-Ray Asset Tools** (manutenção de cena)

@@ -81,6 +81,9 @@ module MuriloEduardo
       # Deactivates the V-Ray context, removing its observers. Restores full
       # model editing speed; V-Ray reactivates on its next use.
       #
+      # Caution: scene changes not yet saved with the model are lost (the
+      # context reloads from the .skp); verified on V-Ray 7.20.
+      #
       # Caution: while the Asset Editor is open this can leave it in a bad
       # state (Chaos forum thread 118428).
       def self.deactivate
@@ -152,6 +155,99 @@ module MuriloEduardo
           current_scene[QualityPreset::PLUGIN_NAME][QualityPreset::PARAMETER] = value
         end
         refresh_ui
+      end
+
+      # Render settings we expose: plugin path and parameter (V-Ray 7.20).
+      # Changes go into the .skp when the model is saved; deactivating the
+      # context before that discards them (verified live).
+      RENDER_SETTINGS = {
+        width: ['/SettingsOutput', :img_width],
+        height: ['/SettingsOutput', :img_height],
+        quality_preset: ['/SettingsOptions', :quality_preset],
+        time_limit_on: ['/SettingsOptions', :time_limit_on],
+        time_limit_minutes: ['/SettingsOptions', :time_limit],
+        noise_limit: ['/SettingsOptions', :progressive_noise_limit],
+        gpu_engine: ['/SettingsOptions', :gpu_engine],
+      }.freeze
+
+      # @return [Hash{Symbol => Object}] keys of RENDER_SETTINGS
+      def self.render_settings
+        current_scene = scene
+        RENDER_SETTINGS.transform_values { |(plugin, parameter)| current_scene[plugin][parameter] }
+      end
+
+      # Writes some of RENDER_SETTINGS into the scene. They reach the .skp
+      # when the model is saved; do not {.deactivate} before that.
+      #
+      # @param values [Hash{Symbol => Object}]
+      # @raise [ArgumentError] on an unknown key
+      def self.update_render_settings(values)
+        unknown = values.keys - RENDER_SETTINGS.keys
+        raise ArgumentError, "unknown render setting(s): #{unknown.join(', ')}" unless unknown.empty?
+
+        change do |current_scene|
+          values.each do |key, value|
+            plugin, parameter = RENDER_SETTINGS.fetch(key)
+            current_scene[plugin][parameter] = value
+          end
+        end
+        refresh_ui
+      end
+
+      # Starts a production render of the current view in a renderer of our
+      # own, so the frame buffer and the model's saved settings stay as they
+      # are. Returns at once; `listener` receives the renderer's events
+      # (`on_state_changed`, `on_progress`), on SketchUp's main thread.
+      #
+      # @param model [Sketchup::Model]
+      # @param width [Integer] pixels
+      # @param height [Integer] pixels
+      # @param max_minutes [Float, nil] progressive time limit, nil = settings
+      # @param listener [Object]
+      # @return [Object] the `VRay::VRayRenderer`
+      def self.start_render(model:, width:, height:, listener:, max_minutes: nil)
+        renderer = ::VRay::VRayRenderer.new
+        ::VRay::ModelExporter.new(model: model, scene: scene, renderer: renderer).export_model(view: model.active_view)
+        output = renderer.grep(:SettingsOutput).first
+        output[:img_width] = width
+        output[:img_height] = height
+        sampler = renderer.grep(:SettingsImageSampler).first
+        sampler[:progressive_maxTime] = max_minutes.to_f if sampler && max_minutes
+        renderer.subscribe(listener)
+        renderer.start
+        renderer
+      end
+
+      # @param renderer [Object] from {.start_render}
+      def self.stop_render(renderer)
+        renderer.stop
+      end
+
+      # Stops sending the renderer's events to the listener.
+      #
+      # @param renderer [Object] from {.start_render}
+      # @param listener [Object]
+      def self.release_render(renderer, listener)
+        renderer.unsubscribe(listener)
+      end
+
+      # @param renderer [Object] from {.start_render}
+      # @return [Symbol] e.g. :rendering, :idleDone
+      def self.render_state(renderer)
+        renderer.state
+      end
+
+      # Saves the rendered image with the frame buffer's color corrections.
+      #
+      # @param renderer [Object] from {.start_render}
+      # @param path [String] .png or .jpg
+      # @return [Hash] `{ width:, height: }`
+      def self.save_render(renderer, path)
+        image = renderer.image(do_color_correct: true, strip_alpha: true)
+        format = File.extname(path).casecmp?('.jpg') ? :jpeg : :png
+        raise IOError, "V-Ray could not save #{path}" unless image.save(path, format: format)
+
+        { width: image.width, height: image.height }
       end
 
       # Snapshot of the environment, useful for diagnostics and bug reports.

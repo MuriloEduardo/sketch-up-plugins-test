@@ -213,9 +213,9 @@ groups:
               VRay::UVTextureSampler, VRay::VRayImage, VRay::VRayRenderer, VRay::VRayRenderer::Plugin,
               VRay::GeomUtils, VRay::Context, VRay::Command, VRay::BatchExporter]
     tools:
-      vray_status: planned
-      get_render_settings: planned
-      set_render_settings: planned
+      vray_status: done
+      get_render_settings: done
+      set_render_settings: done
       apply_quality_preset: planned
       list_vray_materials: planned
       create_vray_material: planned
@@ -226,7 +226,9 @@ groups:
       update_light: planned
       set_environment_hdri: planned
       set_physical_camera: planned
-      render_scene: planned
+      render_scene: done
+      get_render_status: done
+      cancel_render: done
       render_all_scenes: planned
       render_material_variations: planned
       export_vrscene: planned

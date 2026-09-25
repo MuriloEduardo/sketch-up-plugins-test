@@ -78,8 +78,15 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 - Achado: threads Ruby dentro do SketchUp só avançam nos ticks do timer
   (sonda HTTP interna levou ~15 s); clientes externos não sofrem isso.
 
-Próximo: catálogo com teste de cobertura (todas as classes da API) e os
-grupos geometria, materiais, tags, componentes, câmera, V-Ray, LayOut. + auto-texto de cena/escala (P4.4),
+- Catálogo MCP (`tools/mcp/catalog.yml` + teste): 176 classes em 17 grupos.
+- **V-Ray na prática** (pedido do usuário): 1º render por script (640×360,
+  27 s); grupo V-Ray no MCP (status, configurações, `render_scene` como job,
+  status com imagem, cancelar), testado ao vivo pelo proxy; `core/jobs.rb`.
+  Achados: progresso do V-Ray é por etapa; configurações só persistem ao
+  salvar o modelo. TestUp 36/36; 175 unitários. Renders no painel.
+
+Próximo: prompts MCP ("skills" de render e apresentação), materiais/luzes
+V-Ray, render de todas as cenas em lote, grupos de geometria e materiais. + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap

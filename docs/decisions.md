@@ -109,6 +109,19 @@ carimbo e índice são desenhados por código (não dependem do template nem do
 auto-texto do usuário, que variam por instalação e idioma). Template do usuário
 e auto-texto de cena/escala ficam para uma próxima versão (P4.4).
 
+### 2026-09-25 — Render V-Ray como job assíncrono, num renderer próprio
+`render_scene` devolve um id na hora; `get_render_status` acompanha e entrega
+a imagem. O render usa `VRayRenderer.new` + `ModelExporter` (API
+documentada), não o frame buffer da interface, e aplica tamanho/tempo só no
+renderer: o modelo e a janela do usuário não mudam. Os eventos do V-Ray
+(`on_state_changed`, `on_progress`) movem o job; nada de `sleep` ou polling.
+Um render por vez, como o próprio V-Ray.
+
+### 2026-09-25 — Configurações V-Ray só persistem ao salvar o modelo
+Verificado ao vivo: mudanças na cena V-Ray vão para o `.skp` no save;
+`VRayBridge.deactivate` antes disso as descarta. `set_render_settings` vale na
+hora e diz ao agente que fica gravado quando o usuário salvar.
+
 ### 2026-09-25 — Comunicação por portas e adaptadores: ações + eventos
 Pedido do usuário (base profissional, modular, pouco verbosa, que escale).
 Tudo o que o sistema faz é uma **ação** registrada uma vez (esquema, anotações,
