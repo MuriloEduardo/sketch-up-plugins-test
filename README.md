@@ -82,6 +82,7 @@ remover a chave de `authorized_keys` (ver o guia).
 | [docs/workflow.md](docs/workflow.md) | Configuração, ciclo diário, depuração, release |
 | [docs/remote-desktop-setup.md](docs/remote-desktop-setup.md) | Desktop Windows: OpenSSH, Dev Bridge, segurança |
 | [docs/architecture.md](docs/architecture.md) | Topologia WSL/Windows/Docker e camadas do código |
+| [docs/platform.md](docs/platform.md) | Pilares, módulos e produtos; distribuição e atualização |
 | [docs/roadmap.md](docs/roadmap.md) | Produtos, backlog comercial e técnico |
 | [docs/PROGRESS.md](docs/PROGRESS.md) | Estado atual e próximos passos |
 | [docs/decisions.md](docs/decisions.md) | Decisões de arquitetura |

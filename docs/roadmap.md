@@ -37,18 +37,22 @@ Toolchain Docker, lint EW, testes, `.rbz`, ponte WSL↔SketchUp, base de
 referência, extensão mínima `V-Ray Toolkit`.
 
 ### Fase 1 — Fundação técnica (pré-requisito de todo produto)
-Validar tudo que hoje está "a verificar" com SketchUp + V-Ray reais.
+Validar tudo que hoje está "a verificar" com SketchUp + V-Ray reais e construir
+os pilares da plataforma (`docs/platform.md`), cada um puxado por um módulo real.
 
 | # | Item | Status |
 |---|---|---|
 | F1.1 | Desktop: OpenSSH + Dev Bridge (`docs/remote-desktop-setup.md`); `make su-ping` ok | ✅ |
-| F1.2 | `make vray-docs-import` e revisar `docs/reference/vray-ruby-api.md` contra a doc oficial | em andamento (doc importada) |
+| F1.2 | `make vray-docs-import` e revisar `docs/reference/vray-ruby-api.md` contra a doc oficial | ✅ (V-Ray 7.20) |
 | F1.3 | Instalar TestUp 2 no desktop e rodar `make su-test` (VRayBridge) | ✅ |
 | F1.4 | Mapear *user data* ↔ core (exportar `.vropt`/`.vrmat`) para settings e VRayMtl | ideia |
 | F1.5 | Núcleo de travessia do modelo (transformação, visibilidade, herança de material, PID) testado | ideia |
 | F1.6 | Motor de eventos de render (subscriber, fila, estados, timeouts) sem bloquear a UI | ideia |
 | F1.7 | Framework de UI `HtmlDialog` (Modus ou Vue), ponte Ruby↔JS com `to_json`, i18n pt-BR/en/es | ideia |
 | F1.8 | Licenciamento EW (`Sketchup::Licensing`) + modo trial | ideia |
+| F1.9 | Build multi-produto (manifestos, core copiado por namespace) — pilar P0 | ideia |
+| F1.10 | Kernel (comandos declarativos, preferências, log, i18n, erros) — pilar P1 | ideia |
+| F1.11 | Mapa da API do LayOut (`docs/reference/layout-api.md`) + validação ao vivo | em andamento |
 
 ### Fase 2 — Produto 1: **V-Ray Batch Studio** (automação de render)
 O pedido mais recorrente e sem produto dedicado.

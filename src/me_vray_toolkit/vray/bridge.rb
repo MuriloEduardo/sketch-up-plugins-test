@@ -33,6 +33,12 @@ module MuriloEduardo
         extension&.version
       end
 
+      # @return [String, nil] V-Ray Ruby API version (`VRay::API_VERSION`,
+      #   "5.04.02" on V-Ray 7.20), or nil when V-Ray is not loaded.
+      def self.api_version
+        defined?(::VRay::API_VERSION) ? ::VRay::API_VERSION : nil
+      end
+
       # Returns the active V-Ray context.
       #
       # Activating the context installs V-Ray's SketchUp observers, which can
@@ -64,8 +70,10 @@ module MuriloEduardo
         result
       end
 
-      # Asks V-Ray's UI (Asset Editor etc.) to reload from the scene. Needed
-      # after script changes that must show up in the UI.
+      # Asks V-Ray's UI (Asset Editor etc.) to reload from the scene.
+      #
+      # `VRay.refresh_ui` (quoted on the Chaos forum) does not exist in
+      # V-Ray 7.20, so this is currently a no-op there.
       def self.refresh_ui
         ::VRay.refresh_ui if ::VRay.respond_to?(:refresh_ui)
       end
@@ -106,6 +114,7 @@ module MuriloEduardo
           platform: Sketchup.platform,
           vray_extension: vray_extension&.name,
           vray_version: vray_extension&.version,
+          vray_api_version: api_version,
           vray_extension_loaded: vray_extension&.loaded?,
           vray_api_available: available?,
         }

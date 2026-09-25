@@ -8,14 +8,17 @@ Como achar a resposta certa, na ordem:
 2. **Boas práticas SketchUp / requisitos do EW** → `sketchup-dev-guide.md`.
 3. **API Ruby do V-Ray** → `vray-ruby-api.md` (+ `_cache/vray-ruby-api-installed.txt`
    depois de `make vray-docs-import`).
-4. **Parâmetro de plugin do core V-Ray** → `grep -A40 '^## NomeDoPlugin' _cache/vray-plugins.md`.
-5. **Funcionalidade/UI do V-Ray for SketchUp** →
+   Seção 0 lista o que é documentado e o que é interno no V-Ray 7.20.
+4. **LayOut** (pranchas, PDF) → `layout-api.md` (mapa, limitações, o que já
+   foi validado) + seções `## Layout*` de `sketchup-api-index.md`.
+5. **Parâmetro de plugin do core V-Ray** → `grep -A40 '^## NomeDoPlugin' _cache/vray-plugins.md`.
+6. **Funcionalidade/UI do V-Ray for SketchUp** →
    `grep -ril 'termo' _cache/chaos/VSKETCHUP/` (294 páginas da doc oficial).
-6. **Conceito do core V-Ray** (cena, materiais, luzes, câmera, GI) →
+7. **Conceito do core V-Ray** (cena, materiais, luzes, câmera, GI) →
    `_cache/chaos/APPSDK/` (111 páginas; comece por `132780815.md`
    "Working with V-Ray Scenes").
-7. **Casos reais / armadilhas** → `_cache/forums/*.md`.
-8. **Ainda não achou** → rode no SketchUp do desktop: `make su-eval CODE='...'`
+8. **Casos reais / armadilhas** → `_cache/forums/*.md`.
+9. **Ainda não achou** → rode no SketchUp do desktop: `make su-eval CODE='...'`
    (ex.: `VRay::Context.active.scene["/SettingsOptions"].dump`,
    `VRay.methods - Object.methods`, `VRay::Scene.instance_methods(false)`).
 

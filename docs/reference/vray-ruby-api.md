@@ -3,16 +3,53 @@
 Base de conhecimento consolidada de todas as fontes públicas disponíveis em
 2026-09. **A documentação oficial completa da API só vem com a instalação do
 V-Ray** (`Extensions > V-Ray > Help > API Documentation`, arquivo
-`...\V-Ray for SketchUp\extension\documentation\_index.html`). Quando o V-Ray
-estiver instalado, rode `make vray-docs-import` e confronte este documento com
-ela — e atualize-o.
+`...\V-Ray for SketchUp\extension\documentation\_index.html`). Cópia local:
+`make vray-docs-import` → `docs/reference/_cache/vray-ruby-api-installed.txt`
+(busca em texto) e `_cache/vray-ruby-api-installed/` (HTML YARD).
+
+**Confrontado em 2026-09-24 com V-Ray 7.20.00 (core 7.20.05, `VRay::API_VERSION`
+"5.04.02") no SketchUp 26.1.** Ver seção 0.
 
 Legenda de confiabilidade:
 - **[doc]** página oficial da Chaos.
 - **[chaos-dev]** resposta de desenvolvedor/suporte da Chaos no fórum (noel.warren = líder do time V-Ray for SketchUp; konstantin_chaos, Peter.Chaushev, iva_mancheva, natalia.gruzdova = suporte).
 - **[comunidade]** código de usuários que relataram funcionar.
 - **[a verificar]** inferência; confirmar com `make su-eval` antes de depender.
+- **[7.20]** verificado ao vivo no V-Ray 7.20 (introspecção ou execução pela Dev Bridge).
+- **[interno]** existe no V-Ray, mas **fora da doc oficial**: pode mudar sem aviso;
+  só use atrás do `VRayBridge`, com checagem `respond_to?`/`defined?`.
 
+---
+
+## 0. O que a documentação oficial cobre (V-Ray 7.20)
+
+Classes documentadas (19): `AColor`, `Color`, `Matrix`, `Vector`, `Transform`,
+`ModelExporter`, `Proxy`, `Scene`, `Scene::ChangeSet`, `Scene::Plugin`,
+`ScenePreview`, `UVTextureSampler`, `VRayImage`, `VRayInit`, `VRayRenderer`,
+`VRayRenderer::Plugin`, `GeomUtils::*PreviewData`. `VRay::Context` só aparece
+no guia "Getting started" (`active`, `model`, `scene`, `renderer`, `subscribe`),
+sem página própria.
+
+Existem ao vivo mas **não estão na doc** **[interno][7.20]**:
+- `VRay::Command` — `render_production`, `render_interactive`, `render_batch`,
+  `export_vrscene`, `stop_current_render`, `create_*_light`, `create_mesh_proxy`,
+  `create_scatter`, `create_decal`, `convert_material_to_vray/_host`…
+- `VRay::BatchExporter` — `export`, `export_vrscene`, `animation_pages_pages`.
+- `VRay::Context` (métodos): `active`, `fetch`, `instances`, `subscribe`;
+  instância: `activate`, `deactivate`, `delete`, `model`, `scene`, `renderer`,
+  `session`, `start_session`, `end_session`, `overlays`.
+- Singletons de `VRay`: `pump_message`, `start_render`, `import_material`,
+  `get_installation_info`, `get_texture_dimensions`, `get_compute_devices`…
+- **`VRay.refresh_ui` NÃO existe no 7.20** (era citado pela comunidade). O
+  `VRayBridge.refresh_ui` vira no-op. Mesmo assim, o teste
+  `test_quality_preset_round_trip` (escrita em `/SettingsOptions`) passou.
+
+Versão via API **[7.20]**: `VRay::VERSION` → `72000`, `VRay::API_VERSION` →
+`"5.04.02"`, `VRay::CORE_VERSION` → `"7.20.05"`, `VRay::PRODUCT_NAME`.
+
+Estados do renderer (doc): `:idleInitialized`, `:idleStopped`, `:idleError`,
+`:idleFrameDone`, `:idleDone`, `:preparing`, `:rendering`, `:renderingPaused`,
+`:renderingAwaitingChanges`.
 ---
 
 ## 1. Duas camadas de parâmetros (o conceito mais importante)
@@ -49,10 +86,11 @@ entender tipos/semântica, mas lembre da camada *user data*.
 | `VRay::Scene` | `VRay::Context.active.scene` | Coleção de plugins. `scene["/Nome"]` → plugin. **[doc]** |
 | `VRay::Scene::Plugin` | `scene["/SettingsOptions"]` | `plugin[:param]` lê, `plugin[:param] = v` escreve (dentro de `scene.change`). **[doc]** |
 | `VRay::VRayRenderer` | `context.renderer` ou `VRay::VRayRenderer.new` | Renderer; eventos via `subscribe`. **[chaos-dev]** |
-| `VRay::BatchExporter` | `VRay::BatchExporter.new(context: ctx)` | Exporta cenas (páginas) para `.vrscene`. **[chaos-dev]** "interno, pode mudar". |
-| `VRay::Command` | `VRay::Command.render_production(context: ctx)` | Dispara render de produção. **[chaos-dev]** |
-| `VRay::Color` | `VRay::Color.new(r, g, b)` | Floats 0..1. **[chaos-dev]** |
-| `VRay::Transform` | — | Existe na API (citado nas notas). **[a verificar]** assinatura. |
+| `VRay::BatchExporter` | `VRay::BatchExporter.new(context: ctx)` | Exporta cenas (páginas) para `.vrscene`. **[chaos-dev][interno]** |
+| `VRay::Command` | `VRay::Command.render_production(context: ctx)` | Dispara render de produção. **[chaos-dev][interno]** |
+| `VRay::ModelExporter` | `VRay::ModelExporter.new(model:, scene:, renderer:)` | Exporta modelo/grupo/componente para um renderer (`export_model`, `export_group`…). **[doc]** |
+| `VRay::Color` | `VRay::Color.new(r, g, b)` | Floats 0..1. **[doc]** |
+| `VRay::Transform` | `VRay::Transform.new(matrix, vector)` ou 12 floats | Operadores `*`, `+`, `-`; `matrix`, `offset`. **[doc]** |
 
 **Legado (não usar):** `VRay::LiveScene` foi **removido no V-Ray 6** e a
 funcionalidade migrou para `VRay::Context` **[doc: release notes V-Ray 6]**.
@@ -79,7 +117,10 @@ Após mudanças feitas por script que precisam aparecer na UI:
 `VRay.refresh_ui` (ou `VRay::refresh_ui`). **[chaos-dev]**
 
 No projeto: use `VRayBridge.change { |scene| ... }` e `VRayBridge.refresh_ui`
-(`src/me_vray_toolkit/vray/bridge.rb`).
+(`src/me_vray_toolkit/vray/bridge.rb`). Assinaturas oficiais: `change { }` ou
+`change(token) { }`; `create(type)`/`create(type, name) { |plugin| }`;
+`import(container, options)`; `grep(filter) { |plugin| }`;
+`delete(name, options)`; `rename_plugin(old, new, options)`; `unique_name(name)`. **[doc]**
 
 ## 4. Nomes de plugins (hierarquia)
 
@@ -122,11 +163,12 @@ s.change { s["/SettingsOptions"][:binding_support] = %w[bind_all_on bind_color_o
 ```ruby
 scene.each { |plugin| puts "#{plugin.name} #{plugin.category}" }          # [comunidade]
 scene.grep(:MtlWrapper)                                                     # por tipo [chaos-dev, via renderer.grep]
-plugin.each { |name, value, _meta, is_file_path| ... }                      # Plugin#each rende 4 valores [chaos-dev]
-puts plugin.dump                                                            # depuração [chaos-dev]
+plugin.each { |name, value, user_data, file_path, default| ... }           # 5 valores [doc 7.20]
+puts plugin.dump                                                            # depuração [doc]
 
-# Todos os caminhos de arquivo usados pela cena [chaos-dev]
-paths = scene.each.map { |p| p.each.select { |*, file| file }.map { |_, v, *| v } }
+# Todos os caminhos de arquivo usados pela cena. A receita antiga
+# `select { |*, file| file }` pegava o ÚLTIMO valor (default) no 7.20. [doc]
+paths = scene.each.map { |p| p.each.select { |_n, _v, _ud, file, _d| file }.map { |_, v, *| v } }
              .flatten.uniq.reject(&:empty?)
 ```
 
@@ -208,9 +250,13 @@ renderer.clear!; renderer.load(vrscene); renderer.start` e, no estado final,
 Entre modelos: `Sketchup.active_model&.close(true); VRay.pump_message;
 Sketchup.open_file(path, with_status: true)`.
 
-Exportar `.vrscene` do modelo atual: `context.renderer.export(path)` foi usado
-pela comunidade com resultado incompleto (11 KB) — **[a verificar]**; prefira
-`BatchExporter` ou o menu nativo até confirmar na doc instalada.
+Exportar `.vrscene` do modelo atual: `VRayRenderer#export(path, options)`
+(`compressed:`, `hex_arrays:`, `hex_transforms:`, `strip_paths:`) **[doc]**
+grava o que já está *dentro do renderer*. O resultado de 11 KB relatado pela
+comunidade é coerente com um renderer vazio. Caminho documentado: preencher um
+renderer com `VRay::ModelExporter.new(model:, scene:, renderer:).export_model(...)`
+e então `renderer.export(path)` **[doc; a verificar ao vivo]**. Atalho interno:
+`VRay::Command.export_vrscene` **[interno]**.
 
 Batch Render nativo: renderiza cada Página (Scene) do SketchUp; páginas com
 "Include in animation" desmarcado são puladas; saída em
@@ -274,10 +320,12 @@ variam por página. **[doc]**
 
 ## 9. Pendências para confirmar com o V-Ray instalado
 
-- [ ] Rodar `make vray-docs-import` e ler a API oficial inteira.
-- [ ] Assinaturas exatas: `Scene#create`, `#import`, `#each`, `#grep`,
-      `Plugin#duplicate`, `#dump`, `#each`, `VRayRenderer` (estados), `BatchExporter`.
-- [ ] Como obter a versão do V-Ray via API (hoje: Extension Manager).
+- [x] Rodar `make vray-docs-import` (2026-09-24, V-Ray 7.20; seção 0).
+- [x] Assinaturas: `Scene#create/#import/#each/#grep`, `Plugin#duplicate/#dump/#each`,
+      estados do `VRayRenderer` (seções 0, 3 e 5). `BatchExporter` é interno.
+- [x] Versão via API: `VRay::VERSION`, `VRay::API_VERSION` (seção 0).
+- [ ] Substituto de `VRay.refresh_ui` (inexistente no 7.20) para a UI refletir mudanças.
+- [ ] Exportar `.vrscene` via `ModelExporter#export_model` + `VRayRenderer#export` ao vivo.
 - [ ] Como aplicar um material V-Ray recém-criado a entidades SketchUp.
 - [ ] Mapa completo *user data* ↔ core para settings e VRayMtl (exportar `.vropt` / `.vrmat`).
 - [ ] Exportação `.vrscene` do modelo ativo sem BatchExporter.

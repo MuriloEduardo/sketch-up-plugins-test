@@ -2,6 +2,23 @@
 
 Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 
+## 2026-09-24 — Referência V-Ray confrontada, LayOut mapeado, plataforma proposta
+
+- `vray-ruby-api.md` confrontado com a doc oficial do V-Ray 7.20 (19 classes)
+  e introspecção ao vivo: `Command`/`BatchExporter` são internos,
+  `VRay.refresh_ui` não existe, `Plugin#each` rende 5 valores (receita de
+  caminhos corrigida), versão via `VRay::VERSION`/`API_VERSION`,
+  `renderer.export` exporta só o que está no renderer (usar `ModelExporter`).
+- `VRayBridge.api_version` + teste TestUp: 4 testes, 7 asserções ao vivo, Success.
+- `docs/reference/layout-api.md`: API Ruby do LayOut roda dentro do SketchUp;
+  validado ao vivo criar `.layout` e exportar PDF (0,16 s).
+- `docs/platform.md`: pilares (P0–P7), módulos mínimos (scene_audit,
+  layout_sheets, material_variations, texture_relink), produto = manifesto;
+  atualização de clientes pelo EW. Decisões registradas.
+
+Próximo: P0 (build por manifesto) + P1 (kernel) puxados pelo módulo
+`scene_audit`, entregue à Lilian como beta.
+
 ## 2026-09-24 — Desktop conectado de verdade
 
 Verificado ao vivo (desktop 192.168.15.26, usuário Windows `Lilian Rosa`):

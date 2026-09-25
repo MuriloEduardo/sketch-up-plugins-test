@@ -56,3 +56,19 @@ Win32-OpenSSH do desktop.
 Páginas da Chaos, fóruns e artigos ficam em `docs/reference/_cache/`
 (ignorado), regeneráveis por `make refdocs`. Versionamos apenas texto próprio
 e o índice derivado dos stubs MIT da SketchUp.
+
+### 2026-09-24 — Plataforma modular: pilares + módulos + produtos por manifesto
+Proposta em `docs/platform.md`. Produto = manifesto que escolhe módulos; o
+empacotador copia o core para dentro do namespace de cada produto. Motivo:
+começar pequeno em vários produtos sem retrabalho; o EW recomenda duplicar
+lógica compartilhada em vez de extensão-biblioteca (versões diferentes do
+mesmo core colidiriam). Consequência: um pacote grátis "ME Toolkit" (beta)
+com todos os módulos; produtos pagos depois são novos manifestos. Atualização
+de clientes pelo Extension Warehouse; nada de baixar código em runtime.
+
+### 2026-09-24 — API V-Ray: documentada vs interna
+Doc oficial do 7.20 cobre 19 classes (sem `Command`, `BatchExporter`,
+`refresh_ui`). Tudo que é interno só entra atrás do `VRayBridge`, com
+`respond_to?`/`defined?` e teste TestUp, marcado **[interno]** em
+`vray-ruby-api.md`. Motivo: interno muda sem aviso entre versões.
+

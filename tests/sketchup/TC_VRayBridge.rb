@@ -22,6 +22,13 @@ module MuriloEduardo
           assert_equal(RUBY_VERSION, status[:ruby_version])
         end
 
+        def test_api_version_reported_when_vray_loaded
+          skip('V-Ray for SketchUp is not loaded') unless VRayBridge.available?
+
+          assert_match(/\A\d+\.\d+/, VRayBridge.api_version)
+          assert_equal(VRayBridge.api_version, VRayBridge.status[:vray_api_version])
+        end
+
         def test_available_matches_vray_constant
           assert_equal(defined?(::VRay::Context) ? true : false, VRayBridge.available?)
         end
