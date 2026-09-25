@@ -47,6 +47,24 @@ Existem ao vivo mas **não estão na doc** **[interno][7.20]**:
 Versão via API **[7.20]**: `VRay::VERSION` → `72000`, `VRay::API_VERSION` →
 `"5.04.02"`, `VRay::CORE_VERSION` → `"7.20.05"`, `VRay::PRODUCT_NAME`.
 
+Comportamentos verificados ao vivo **[7.20]** (2026-09-24, auditoria de cena):
+- `Plugin#category` devolve símbolos: `:settings`, `:file_type`, `:material`,
+  `:BRDF` (maiúsculo), `:texture`, `:light`, `:volumetric`, `:render_channel`,
+  `:image_filter`.
+- Material nativo do SketchUp aparece na cena como `"/<nome>"` do tipo
+  **`:_HostMaterial`**; a textura fica embutida no `.skp` e **não** gera
+  parâmetro de arquivo. Arquivos externos só vêm de assets V-Ray (bitmaps de
+  VRayMtl, proxies, IES, HDRI).
+- **Só a camada user data persiste**: um `TexBitmap` ligado pelo parâmetro do
+  core `BRDFVRayMtl[:diffuse]` sumiu ao desativar/reativar o contexto; ligado
+  por `[:diffuse_tex]` (+ `[:diffuse_tex_on] = true`) persistiu. Parâmetros
+  user data do difuso: `diffuse_tex`, `diffuse_tex_on`, `diffuse_color`,
+  `diffuse_tex_mult`, `diffuse_res_mult`.
+- `Plugin#each_child` **não aceita argumentos** no 7.20 (a doc diz `(options)`;
+  com `{}` dá "wrong number of arguments").
+- Um VRayMtl criado por script (`MtlSingleBRDF` + `BRDFVRayMtl` filho) é
+  sincronizado para um material do SketchUp com o mesmo nome.
+
 Estados do renderer (doc): `:idleInitialized`, `:idleStopped`, `:idleError`,
 `:idleFrameDone`, `:idleDone`, `:preparing`, `:rendering`, `:renderingPaused`,
 `:renderingAwaitingChanges`.

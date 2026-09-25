@@ -46,8 +46,13 @@ Sem Ruby no host: nunca rode `ruby`/`bundle` direto no WSL; use
 
 ```
 src/me_vray_toolkit.rb          registro da extensão (SÓ registro — regra do EW)
-src/me_vray_toolkit/main.rb     menus/comandos
-src/me_vray_toolkit/vray/       VRayBridge (único ponto que toca ::VRay) + lógica pura
+src/me_vray_toolkit/            produto COMPLETO (todas as features); ver docs/platform.md
+  main.rb, product.rb           carregador + lista de features (FEATURES)
+  core/                         pilares genéricos: Commands, Menu, I18n, Html, ReportDialog
+  sketchup/                     ModelData (fatos do modelo como Hashes)
+  vray/                         VRayBridge (único ponto que toca ::VRay) + lógica pura
+  features/<nome>/              uma funcionalidade; só usa pilares, nunca outra feature
+products/<id>.json              produtos derivados (subconjunto de features), gerados no package
 tests/unit/                     Minitest puro (Docker)
 tests/sketchup/                 TestUp (dentro do SketchUp), convenção TC_*.rb
 tools/build/                    empacotamento e runner de testes
@@ -61,8 +66,10 @@ Arquitetura e topologia WSL ↔ desktop Windows ↔ Docker: `docs/architecture.m
 
 ## Regras do projeto
 
-- Namespace `MuriloEduardo::VRayToolkit`; novos produtos = novas extensões em
-  `src/me_<produto>.rb` + pasta. Não renomear namespace sem pedido explícito.
+- Namespace `MuriloEduardo::VRayToolkit`. Funcionalidade nova = pasta em
+  `src/me_vray_toolkit/features/` registrando comandos em `Commands` + entrada
+  em `product.rb`. Produto novo = `products/<id>.json` (o build copia pilares +
+  features escolhidas com outro namespace). Não renomear namespace sem pedido explícito.
 - Lógica pura separada do código que usa a API (testável no Docker).
   Todo código novo de lógica pura vem com teste em `tests/unit/`.
 - Requisitos do Extension Warehouse são inegociáveis (lint os verifica). Antes

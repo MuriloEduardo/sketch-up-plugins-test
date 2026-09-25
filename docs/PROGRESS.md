@@ -2,6 +2,30 @@
 
 Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 
+## 2026-09-24 — Pilares P0/P1 + módulo Auditoria de Cena (0.2.0)
+
+- P0: `products/<id>.json` → `tools/build/product_builder.rb` (produto
+  derivado com pilares + features escolhidas, namespace próprio). Testado:
+  produto de teste `me_scene_audit` empacotado com lint do EW limpo.
+- P1: `core/` com `Commands` (registro + erro amigável), `Menu`, `I18n`
+  (en/pt-BR/es), `Html`, `ReportDialog`. `sketchup/model_data.rb` (P2 mínimo).
+  `VRayBridge`: `with_context`, `file_references`, `plugin_counts`.
+- Features: `scene_audit` (nova) e `render_quality` (migrada do main.rb).
+  Menu "Status..." removido (o resumo está na auditoria).
+- Testes: 89 unitários; 14 TestUp ao vivo (SU 26.1 + V-Ray 7.20), Success.
+- Validado ao vivo: auditoria detecta bitmap V-Ray faltando (Erro), material
+  sem uso (Info); janela abre em pt-BR. Descobertas na referência V-Ray
+  (`_HostMaterial`, só user data persiste, `each_child` sem argumentos).
+
+- Autostart da Dev Bridge ligado no `config.json` do desktop (pedido do
+  usuário). Dev Bridge 0.1.2 (`dist/`): item *Start Automatically* com
+  marcação; o desktop ainda roda 0.1.0 até reinstalar o `.rbz`.
+
+Pendente: a Lilian precisa **reiniciar o SketchUp** para ver o menu novo
+(o antigo tem itens que apontam para métodos removidos). Com o autostart,
+a ponte já volta ligada.
+Próximo: `layout_sheets` (página do LayOut por cena) ou `material_variations`.
+
 ## 2026-09-24 — Referência V-Ray confrontada, LayOut mapeado, plataforma proposta
 
 - `vray-ruby-api.md` confrontado com a doc oficial do V-Ray 7.20 (19 classes)

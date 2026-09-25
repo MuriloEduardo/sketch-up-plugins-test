@@ -89,6 +89,57 @@ module MuriloEduardo
         ::VRay::Context.active(false)&.delete
       end
 
+      # Runs the block with an active V-Ray context and, if the context was not
+      # active before, deactivates it afterwards so V-Ray's observers do not
+      # keep slowing down modeling (see {.context}).
+      #
+      # @yield
+      # @return [Object] the block's return value
+      # @raise [NotAvailable]
+      def self.with_context
+        raise NotAvailable, 'V-Ray for SketchUp is not loaded.' unless available?
+
+        was_active = !::VRay::Context.active(false).nil?
+        begin
+          yield
+        ensure
+          deactivate unless was_active
+        end
+      end
+
+      # Plugin categories whose file parameters are outputs or caches (render
+      # output, light cache files…), not assets the scene depends on.
+      NON_ASSET_CATEGORIES = %i[settings file_type].freeze
+
+      # Files referenced by the scene's assets (bitmaps, proxies, IES…).
+      # `Plugin#each` yields `name, value, user_data, file_path, default`
+      # (V-Ray 7.20 docs).
+      #
+      # @return [Array<Hash>] `{ plugin:, parameter:, path: }`, non-empty paths only
+      def self.file_references
+        references = []
+        scene.each do |plugin|
+          next if NON_ASSET_CATEGORIES.include?(plugin.category)
+
+          plugin.each do |name, value, _user_data, file_path, _default|
+            next unless file_path
+
+            Array(value).grep(String).reject(&:empty?).each do |path|
+              references << { plugin: plugin.name, parameter: name, path: path }
+            end
+          end
+        end
+        references
+      end
+
+      # @return [Hash{Symbol => Integer}] number of scene plugins per category
+      #   (e.g. `:material`, `:light`, `:texture`)
+      def self.plugin_counts
+        counts = Hash.new(0)
+        scene.each { |plugin| counts[plugin.category] += 1 }
+        counts
+      end
+
       # @return [Integer] current value of `/SettingsOptions`.`quality_preset`
       def self.quality_preset
         scene[QualityPreset::PLUGIN_NAME][QualityPreset::PARAMETER]

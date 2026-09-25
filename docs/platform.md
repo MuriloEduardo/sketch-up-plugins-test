@@ -42,8 +42,8 @@ coloca o core **dentro do namespace de cada produto**
 
 | # | Pilar | Serve para | Roadmap |
 |---|---|---|---|
-| P0 | **Build multi-produto**: manifestos, cópia do core com namespace, versão, CI | todos | novo |
-| P1 | **Kernel**: registro declarativo de comandos (menu, toolbar, menu de contexto), preferências persistentes, log, i18n pt-BR/en/es, erros amigáveis, operação com undo | todos | novo |
+| P0 | **Build multi-produto**: manifestos, cópia do core com namespace, versão, CI ✅ | todos | F1.9 |
+| P1 | **Kernel**: registro de comandos + menu ✅, i18n pt-BR/en/es ✅, erros amigáveis ✅; depois: toolbar, menu de contexto, preferências | todos | F1.10 |
 | P2 | **Modelo SketchUp**: travessia com transformações, seleção, tags, cenas, câmeras, materiais | auditoria, LayOut, variações | F1.5 |
 | P3 | **V-Ray**: `VRayBridge` ampliado (settings, materiais, render, eventos), separando API documentada de interna | tudo que é V-Ray | F1.4 |
 | P4 | **Jobs**: fila assíncrona com `UI.start_timer`, progresso, cancelamento, sem travar a UI; eventos de render | render em lote, exportações, LayOut | F1.6 |
@@ -89,15 +89,19 @@ cada execução. Conflita com a revisão e a criptografia do EW (`.rbe`) e é um
 risco de segurança para o cliente. Configuração remota (ligar e desligar
 módulos, avisos) como **dados**, não como código, é aceitável e pode vir depois.
 
-## Estrutura de pastas proposta
+## Estrutura implementada (2026-09-24)
 
 ```
-platform/core/            pilares (código único, sem nome de produto)
-platform/modules/<nome>/  módulos
-products/<produto>.yml    manifesto: nome, namespace, versão, módulos
-src/                      gerado pelo build para dev (ou mantido para o produto atual)
-tools/build/              empacotador lê manifestos e gera dist/<produto>-<versão>.rbz
+src/me_vray_toolkit/            produto completo = fonte única
+  core/ sketchup/ vray/         pilares
+  features/<nome>/              módulos (scene_audit, render_quality)
+  product.rb                    NAME + FEATURES
+products/<id>.json              produtos derivados (subconjunto de features)
+tools/build/product_builder.rb  monta build/products/<id>/ e o package empacota
 ```
 
-A migração do `MuriloEduardo::VRayToolkit` atual é incremental: o
-`VRayBridge` e a lógica pura viram P3; `main.rb` vira o primeiro uso do P1.
+Diferença em relação à proposta inicial: em vez de uma pasta `platform/`
+neutra gerando `src/`, o próprio `src/me_vray_toolkit/` é o produto completo.
+Motivos: o `rubocop-sketchup` exige `src/` com arquivo de registro + pasta, e
+a Dev Bridge continua sincronizando `src/` sem mudança (nada a reinstalar no
+desktop). Produto derivado testado: lint do EW limpo no código gerado.

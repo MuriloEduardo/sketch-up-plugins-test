@@ -31,3 +31,4 @@ vfb_history/
 # Claude
 .claude/settings.local.json
 __pycache__/
+/build/

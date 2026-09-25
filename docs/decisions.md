@@ -72,3 +72,17 @@ Doc oficial do 7.20 cobre 19 classes (sem `Command`, `BatchExporter`,
 `respond_to?`/`defined?` e teste TestUp, marcado **[interno]** em
 `vray-ruby-api.md`. Motivo: interno muda sem aviso entre versões.
 
+### 2026-09-24 — `src/me_vray_toolkit/` é o produto completo; derivados por manifesto
+Substitui a estrutura "platform/ neutra → src/ gerado" da proposta. O
+`rubocop-sketchup` exige `src/` com registro + pasta e a Dev Bridge sincroniza
+`src/`; manter o produto completo ali não muda o fluxo de desenvolvimento.
+Produtos menores: `products/<id>.json` → `tools/build/product_builder.rb`
+copia pilares + features escolhidas trocando id/namespace. Isolamento entre
+features verificado no build e em teste.
+
+### 2026-09-24 — Autostart da Dev Bridge ligado no desktop da Lilian
+Pedido do usuário. Continua só em 127.0.0.1 + token + túnel SSH; muda apenas
+a janela de tempo (a ponte fica ativa sempre que o SketchUp está aberto).
+Controle do dono: item de menu *Start Automatically* (0.1.2) com marcação.
+Padrão do `config.json` continua `false` para qualquer instalação nova.
+

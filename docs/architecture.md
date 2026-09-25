@@ -27,16 +27,24 @@ Docker (compose.yaml) — Ruby 3.2 = SketchUp 2024–2026
 
 ## Camadas do código (`src/me_vray_toolkit/`)
 
-| Camada | Depende de | Testado por |
-|---|---|---|
-| **Lógica pura** (ex.: `vray/quality_preset.rb`, `vray/plugin_path.rb`) | nada além de Ruby | Minitest no Docker (`make test`) |
-| **Bridges** (ex.: `vray/bridge.rb`) — único ponto que toca `::VRay` | SketchUp + V-Ray | TestUp no SketchUp (`make su-test`) |
-| **Comandos/UI** (`main.rb`, futuros `ui/`, `tools/`) | SketchUp | TestUp + teste manual |
+`src/` é o produto completo; produtos menores são derivados no build
+(`docs/platform.md`, `products/README.md`).
+
+| Pasta | Conteúdo | Depende de | Testado por |
+|---|---|---|---|
+| `core/` | pilares genéricos: `Commands` (registro), `I18n`, `Html` (puros); `Menu`, `ReportDialog` (UI) | Ruby / SketchUp | Minitest + TestUp |
+| `sketchup/` | `ModelData`: fatos do modelo como Hashes | SketchUp | TestUp |
+| `vray/` | `VRayBridge` (único ponto que toca `::VRay`) + `QualityPreset`, `PluginPath` (puros) | SketchUp + V-Ray | Minitest + TestUp |
+| `features/<nome>/` | `feature.rb` (registra comandos, coleta dados) + lógica pura (analisadores, relatórios, textos) | pilares | Minitest + TestUp |
+| `main.rb`, `product.rb` | carrega as features de `Product::FEATURES` e monta o menu | tudo | TestUp |
 
 Regras:
-- Tudo que puder ser puro, é puro (mais testável sem SketchUp).
-- `::VRay` só é referenciado dentro de `VRayBridge` — mudanças de API do V-Ray
-  entre versões são corrigidas em um lugar.
+- Tudo que puder ser puro, é puro (mais testável sem SketchUp). Padrão de
+  feature: coletar fatos (SketchUp/V-Ray) → analisar (puro) → mostrar.
+- `::VRay` só é referenciado dentro de `VRayBridge`.
+- Uma feature nunca depende de outra (verificado no build e em
+  `tests/unit/features/isolation_test.rb`).
+- Textos visíveis: tabelas `STRINGS` por feature (en, pt-BR, es) via `I18n.t`.
 - Arquivos puros não chamam `Sketchup.require`; os testes carregam por caminho.
 - Um arquivo por classe/módulo; namespace `MuriloEduardo::VRayToolkit`.
 
@@ -47,10 +55,9 @@ Extensão separada, só de desenvolvimento, com o mesmo layout (lógica pura em
 testada no Docker, inclusive com TCP real; `main.rb` liga ao SketchUp).
 Empacotada à parte por `make dev-bridge-package`; `make package` só empacota `src/`.
 
-## Novas extensões
+## Novos produtos
 
-Cada produto do roadmap pode virar uma extensão separada em `src/`
-(`src/me_<produto>.rb` + `src/me_<produto>/`). `make package` gera um `.rbz`
-por arquivo de registro em `src/*.rb`. Código compartilhado deve ser
-duplicado por extensão (recomendação do EW: evitar dependência entre
-extensões) — ou extraído para um gerador/vendor script quando crescer.
+`products/<id>.json` → `make package` gera `dist/<id>-<versão>.rbz` com os
+pilares + as features escolhidas, renomeando `me_vray_toolkit` → `<id>` e
+`VRayToolkit` → `<namespace>` (`tools/build/product_builder.rb`). Cada produto
+tem a própria cópia dos pilares (recomendação do EW: sem extensão-biblioteca).

@@ -15,6 +15,7 @@ AllCops:
   TargetRubyVersion: 3.2 # SketchUp 2024+ usa Ruby 3.2.
   Exclude:
     - doc/**/*
+    - build/**/*
     - dist/**/*
     - docs/**/*
     - vendor/**/*
@@ -52,6 +53,18 @@ Style/Documentation:
   Exclude:
     - tests/**/*
     - tools/**/*
+
+# `id` é um nome comum e claro (ver .claude/rules/ruby-code-style.md).
+Naming/MethodParameterName:
+  AllowedNames:
+    - x
+    - y
+    - z
+    - id
+
+# As traduções (core/i18n.rb) usam marcadores %{nome}, não format().
+Style/FormatStringToken:
+  EnforcedStyle: template
 
 # TestUp exige a convenção TC_<Nome> para arquivos e classes de teste.
 Naming/FileName:

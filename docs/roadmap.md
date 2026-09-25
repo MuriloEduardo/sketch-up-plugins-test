@@ -50,8 +50,9 @@ os pilares da plataforma (`docs/platform.md`), cada um puxado por um módulo rea
 | F1.6 | Motor de eventos de render (subscriber, fila, estados, timeouts) sem bloquear a UI | ideia |
 | F1.7 | Framework de UI `HtmlDialog` (Modus ou Vue), ponte Ruby↔JS com `to_json`, i18n pt-BR/en/es | ideia |
 | F1.8 | Licenciamento EW (`Sketchup::Licensing`) + modo trial | ideia |
-| F1.9 | Build multi-produto (manifestos, core copiado por namespace) — pilar P0 | ideia |
-| F1.10 | Kernel (comandos declarativos, preferências, log, i18n, erros) — pilar P1 | ideia |
+| F1.9 | Build multi-produto (manifestos, core copiado por namespace) — pilar P0 | ✅ |
+| F1.10 | Kernel (comandos, menu, i18n, erros) — pilar P1 | ✅ mínimo (falta toolbar, preferências) |
+| F1.12 | Módulo `scene_audit` (arquivos V-Ray faltando, texturas pesadas, materiais sem uso) | ✅ beta, validado ao vivo |
 | F1.11 | Mapa da API do LayOut (`docs/reference/layout-api.md`) + validação ao vivo | em andamento |
 
 ### Fase 2 — Produto 1: **V-Ray Batch Studio** (automação de render)
