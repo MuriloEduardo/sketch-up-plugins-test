@@ -77,7 +77,7 @@ module MuriloEduardo
         # @param model [Sketchup::Model]
         # @return [Boolean] false if the user must save first or cancelled
         def self.ready_to_use?(model)
-          if model_path.empty?
+          if model.path.empty?
             UI.messagebox(t(:not_saved))
             return false
           end

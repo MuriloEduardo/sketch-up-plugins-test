@@ -16,7 +16,15 @@
       "Bash(docker compose run --rm package)",
       "Bash(git status)",
       "Bash(git diff:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(sed -i \"s/          assert_equal\\(\\\\['Sheet Index', 'P.Planta', 'E.Fachada'\\\\].size, result\\\\[:sheets\\\\].size\\)/          assert_equal\\(3, result[:sheets].size\\)/\" tests/sketchup/TC_LayoutSheets.rb)",
+      "Bash(timeout 300 make check)",
+      "Bash(mkdir -p /tmp/claude-1000/-home-murilo-Outros-Personal-setembro-sketch-up-plugins-test/fa4e3ffe-b6d1-4b74-93fa-9a1a9b85d67b/scratchpad)",
+      "Bash(python3 -)",
+      "Bash(timeout 300 make lint)",
+      "Bash(timeout 400 make check)",
+      "Bash(timeout 300 make package)",
+      "Bash(sed -i '80s/if model_path.empty?/if model.path.empty?/' src/me_vray_toolkit/features/layout_sheets/feature.rb)"
     ],
     "ask": [
       "Bash(make su-connect:*)",
