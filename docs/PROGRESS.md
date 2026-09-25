@@ -32,7 +32,15 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 - Roadmap: Fase 6 ampliada (L9–L12, catálogo máximo de tools MCP); decisão do
   usuário: seguir a ordem do roadmap, MCP depois dos módulos prioritários.
 
-Próximo: template `.layout` do usuário + auto-texto de cena/escala (P4.4),
+- Bug no menu corrigido (`ready_to_use?` usava variável inexistente; só o
+  caminho do menu passava ali) + teste TestUp novo (ainda não rodado ao vivo).
+- Teste real no desktop: modelo de teste com 2 caixas e 3 cenas → 4 pranchas
+  + PDF em 4,6 s. **Problema:** planta e fachada (ortogonais) saem cortadas: a
+  viewport herda a câmera da cena com outra proporção, e o LayOut não tem
+  "zoom extents". Próximo item: calcular escala técnica que caiba (1:20…1:500)
+  para cenas ortogonais e mostrá-la no carimbo.
+
+Próximo: escala automática das vistas ortogonais; depois template `.layout` do usuário + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap
