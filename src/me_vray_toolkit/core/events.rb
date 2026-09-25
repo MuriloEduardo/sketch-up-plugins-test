@@ -21,10 +21,10 @@ module MuriloEduardo
 
       RECENT_LIMIT = 200
 
-      @subscribers = {}
-      @recent = []
+      @subscribers ||= {}
+      @recent ||= []
       @last_error = nil
-      @next_id = 0
+      @next_id ||= 0
 
       class << self
 

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 Sketchup.require('me_vray_toolkit/core/commands')
+Sketchup.require('me_vray_toolkit/core/events')
 
 module MuriloEduardo
   module VRayToolkit
@@ -21,9 +22,14 @@ module MuriloEduardo
         submenu
       end
 
+      # Shows the error and publishes "command.failed", so diagnostics
+      # (e.g. the development error audit) keep it after the dialog closes.
+      #
       # @param spec [Commands::Spec]
       # @param error [StandardError]
       def self.report_error(spec, error)
+        Events.publish('command.failed', { command: spec.id.to_s, error_class: error.class.name,
+                                           error: error.message, backtrace: Array(error.backtrace).first(50), })
         UI.messagebox("#{spec.label}\n\n#{error.class}: #{error.message}")
       end
 

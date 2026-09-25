@@ -86,7 +86,11 @@ module MuriloEduardo
           publish('action.completed', action, source, started)
           result
         rescue StandardError => error
-          publish('action.failed', action, source, started, error: "#{error.class}: #{error.message}") if action
+          if action
+            publish('action.failed', action, source, started, error: "#{error.class}: #{error.message}",
+                                                              error_class: error.class.name,
+                                                              backtrace: Array(error.backtrace).first(50))
+          end
           raise
         end
 
