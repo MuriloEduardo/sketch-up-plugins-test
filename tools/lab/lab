@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+"""Cliente do Laboratório: escreve o painel de P&D na plataforma da Lilian Rosa
+Interiores (/admin/laboratorio), no lugar do antigo artifact "Painel SketchUp".
+
+A plataforma é outro repositório (lilian-rosa-interiores); o contrato entre os
+dois é a API dela, protegida pelo LAB_TOKEN:
+  POST /api/laboratorio           status (mescla), progress (substitui), log (acrescenta)
+  POST /api/laboratorio/arquivos  imagem (png/jpeg/webp) ou modelo 3D (json), até 4 MB
+  POST /api/laboratorio/erros     auditoria de erros (quem manda é a Dev Bridge)
+
+Uso:
+  lab status activity="Render em lote" bridge=online tests="235 ok" version=0.3.0
+  lab log ok "Commit 1456a4f: presets" [--source git] [--at 2026-09-25T09:45:00-03:00]
+  lab progress progresso.json            lista [{title, detail?, state}] (done|doing|next|blocked)
+  lab image render.png --caption "Interior B" [--group "Iluminação"] [--at ISO]
+  lab model3d modelo.json --caption "TesteMurilo" [--stats "122 faces"]
+  lab import-board DIR                   migra um export do artifact (board/*.json + assets/)
+  lab error KIND "mensagem" [--source bridge] [--context '{"k": 1}']
+                                         registra um erro na auditoria (ex.: a ponte não respondeu)
+
+Configuração: .lab.env na raiz do repositório (fora do git) com LAB_URL e
+LAB_TOKEN, ou as mesmas variáveis no ambiente.
+Saída: 0 ok, 1 a plataforma recusou, 2 sem configuração/conexão.
+"""
+import argparse
+import datetime
+import json
+import mimetypes
+import os
+import pathlib
+import socket
+import sys
+import urllib.error
+import urllib.request
+import uuid
+
+REPO = pathlib.Path(__file__).resolve().parents[2]
+ENV_FILE = REPO / ".lab.env"
+STATUS_KEYS = {"activity", "bridge", "model", "sketchup", "vray", "tests", "version"}
+
+
+def fail(message, code=2):
+    print(f"erro: {message}", file=sys.stderr)
+    sys.exit(code)
+
+
+def config():
+    values = {}
+    if ENV_FILE.exists():
+        for line in ENV_FILE.read_text().splitlines():
+            if "=" in line and not line.lstrip().startswith("#"):
+                key, value = line.split("=", 1)
+                values[key.strip()] = value.strip()
+    url = os.environ.get("LAB_URL") or values.get("LAB_URL")
+    token = os.environ.get("LAB_TOKEN") or values.get("LAB_TOKEN")
+    if not url or not token:
+        fail(f"defina LAB_URL e LAB_TOKEN em {ENV_FILE.name} ou no ambiente")
+    return url.rstrip("/"), token
+
+
+def send(path, body, content_type):
+    url, token = config()
+    request = urllib.request.Request(
+        f"{url}{path}", data=body, method="POST",
+        headers={"Authorization": f"Bearer {token}", "Content-Type": content_type},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return json.loads(response.read() or b"{}")
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", "replace")
+        fail(f"{error.code} em {path}: {detail}", 1)
+    except urllib.error.URLError as error:
+        fail(f"sem conexão com {url}: {error.reason}")
+
+
+def post_json(payload):
+    return send("/api/laboratorio", json.dumps(payload).encode(), "application/json")
+
+
+def multipart(fields, file_path, content_type):
+    """Corpo multipart/form-data (sem dependências)."""
+    boundary = uuid.uuid4().hex
+    parts = []
+    for name, value in fields.items():
+        if value is None:
+            continue
+        parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n{value}\r\n'.encode())
+    path = pathlib.Path(file_path)
+    parts.append(
+        f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{path.name}"\r\n'
+        f"Content-Type: {content_type}\r\n\r\n".encode()
+    )
+    parts.append(path.read_bytes())
+    parts.append(f"\r\n--{boundary}--\r\n".encode())
+    return b"".join(parts), f"multipart/form-data; boundary={boundary}"
+
+
+def upload(kind, file_path, caption, group=None, stats=None, at=None):
+    path = pathlib.Path(file_path)
+    if not path.is_file():
+        fail(f"arquivo não encontrado: {file_path}")
+    content_type = "application/json" if kind == "model3d" else (mimetypes.guess_type(path.name)[0] or "application/octet-stream")
+    body, header = multipart({"kind": kind, "caption": caption, "group": group, "stats": stats, "at": at}, path, content_type)
+    return send("/api/laboratorio/arquivos", body, header)
+
+
+def cmd_status(args):
+    status = {}
+    for pair in args.pairs:
+        key, sep, value = pair.partition("=")
+        if not sep or key not in STATUS_KEYS:
+            fail(f"use chave=valor com chave em {sorted(STATUS_KEYS)}: {pair!r}")
+        status[key] = value
+    print(json.dumps(post_json({"status": status})))
+
+
+def cmd_log(args):
+    entry = {"level": args.level, "text": args.text, "source": args.source, "at": args.at}
+    print(json.dumps(post_json({"log": [{k: v for k, v in entry.items() if v is not None}]})))
+
+
+def cmd_progress(args):
+    data = json.loads(pathlib.Path(args.file).read_text())
+    items = data["items"] if isinstance(data, dict) else data
+    print(json.dumps(post_json({"progress": items})))
+
+
+def cmd_image(args):
+    print(json.dumps(upload("image", args.file, args.caption, args.group, at=args.at)))
+
+
+def cmd_model3d(args):
+    print(json.dumps(upload("model3d", args.file, args.caption, stats=args.stats, at=args.at)))
+
+
+def asset_file(assets, url):
+    """/_blob/<id> do artifact → assets/<id>.<ext> baixado."""
+    asset_id = url.rsplit("/", 1)[-1]
+    matches = sorted(assets.glob(f"{asset_id}.*"))
+    if not matches:
+        fail(f"asset {asset_id} não está em {assets}")
+    return matches[0]
+
+
+def cmd_error(args):
+    context = json.loads(args.context) if args.context else {}
+    entry = {
+        "id": str(uuid.uuid4()),
+        "at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+        "source": args.source,
+        "kind": args.kind,
+        "message": args.message,
+        "machine": socket.gethostname(),
+        "context": {"reported_by": "notebook (WSL)", **context},
+    }
+    print(json.dumps(send("/api/laboratorio/erros", json.dumps({"errors": [entry]}).encode(), "application/json")))
+
+
+def cmd_import_board(args):
+    root = pathlib.Path(args.dir)
+    board, assets = root / "board", root / "assets"
+    read = lambda name: json.loads((board / f"{name}.json").read_text()) if (board / f"{name}.json").exists() else {}
+
+    status = {k: v for k, v in read("status").items() if k in STATUS_KEYS}
+    progress = read("progress").get("items", [])
+    log = [{k: v for k, v in entry.items() if k in {"at", "level", "source", "text"}} for entry in read("log").get("entries", [])]
+    print("status/progresso/log:", json.dumps(post_json({"status": status, "progress": progress, "log": log})))
+
+    for item in read("gallery").get("items", []):
+        result = upload("image", asset_file(assets, item["url"]), item.get("caption") or "Imagem", item.get("group"), at=item.get("at"))
+        print("imagem:", item.get("caption"), result.get("id"))
+    model = read("model3d")
+    if model.get("url"):
+        result = upload("model3d", asset_file(assets, model["url"]), model.get("title") or "Modelo", stats=model.get("stats"), at=model.get("at"))
+        print("modelo 3D:", model.get("title"), result.get("id"))
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="lab", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p = sub.add_parser("status", help="mescla campos do status")
+    p.add_argument("pairs", nargs="+", metavar="chave=valor")
+    p.set_defaults(run=cmd_status)
+
+    p = sub.add_parser("log", help="acrescenta uma entrada ao log")
+    p.add_argument("level", choices=["ok", "info", "warn", "error"])
+    p.add_argument("text")
+    p.add_argument("--source")
+    p.add_argument("--at", help="ISO 8601 com fuso; padrão: agora")
+    p.set_defaults(run=cmd_log)
+
+    p = sub.add_parser("progress", help="substitui a lista de progresso")
+    p.add_argument("file")
+    p.set_defaults(run=cmd_progress)
+
+    p = sub.add_parser("image", help="envia uma imagem para a galeria")
+    p.add_argument("file")
+    p.add_argument("--caption", required=True)
+    p.add_argument("--group")
+    p.add_argument("--at")
+    p.set_defaults(run=cmd_image)
+
+    p = sub.add_parser("model3d", help="envia o retrato 3D do modelo (mesh_export)")
+    p.add_argument("file")
+    p.add_argument("--caption", required=True)
+    p.add_argument("--stats")
+    p.add_argument("--at")
+    p.set_defaults(run=cmd_model3d)
+
+    p = sub.add_parser("error", help="registra um erro na auditoria (/admin/laboratorio/erros)")
+    p.add_argument("kind", help="classe ou rótulo, ex.: BridgeUnresponsive")
+    p.add_argument("message")
+    p.add_argument("--source", choices=["console", "toolkit", "bridge", "crash"], default="bridge")
+    p.add_argument("--context", help="JSON com detalhes")
+    p.set_defaults(run=cmd_error)
+
+    p = sub.add_parser("import-board", help="migra um export do artifact Painel SketchUp")
+    p.add_argument("dir", help="pasta com board/*.json e assets/<id>.<ext>")
+    p.set_defaults(run=cmd_import_board)
+
+    args = parser.parse_args()
+    args.run(args)
+
+
+if __name__ == "__main__":
+    main()

@@ -3,6 +3,29 @@
 Registre aqui decisões que não são óbvias pelo código. Formato: data, decisão,
 motivo, consequência. Não apague; marque como substituída.
 
+### 2026-09-25 — Painel e auditoria de erros na plataforma da Lilian Rosa Interiores
+O painel de acompanhamento (antes o artifact "Painel SketchUp" do claude.ai)
+passa a ser `/admin/laboratorio` na plataforma do estúdio (repositório
+`lilian-rosa-interiores`, Vercel). Os repositórios continuam separados; o
+contrato é a API da plataforma com `LAB_TOKEN` (formato igual ao do artifact).
+Cliente: `tools/lab/lab`. Motivo: pedido do usuário de unificar tudo na mesma
+plataforma. Consequência: o artifact fica só como histórico (não é mais escrito).
+
+### 2026-09-25 — Auditoria de erros mora na Dev Bridge, não no produto
+Pedido da dona do desktop: os erros do SketchUp não podem se perder. Para pegar
+erros de **qualquer** origem (SketchUp, V-Ray, outras extensões) é preciso
+escutar o console do Ruby (`SKETCHUP_CONSOLE`), o que o Extension Warehouse
+proíbe (não modificar a API). Por isso a escuta, o diário (`errors.jsonl`,
+só acrescenta), a detecção de sessão que morreu (marcador por PID) e o envio
+(`Sketchup::Http::Request` para `/api/laboratorio/erros`) ficam na ponte, que
+já é só de desenvolvimento. O produto contribui só publicando falhas no
+barramento (`command.failed`, `action.failed` com classe e pilha, `job.failed`).
+Consequência: a ponte passa a fazer requisições **de saída** para a plataforma
+(com o token configurado pela dona no menu); as garantias de entrada (só
+127.0.0.1, acesso por túnel SSH) não mudaram. O arranque também mudou: o
+diagnóstico sobe primeiro e uma falha ao carregar o workspace não impede mais
+o servidor nem o menu de subirem.
+
 ### 2026-09-24 — Toolchain inteira em Docker
 Ruby 3.2 (mesmo do SketchUp 2024–2026) num contêiner via Compose; `make` como
 fachada. Motivo: pedido do usuário; host WSL sem Ruby; reprodutibilidade.

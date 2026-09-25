@@ -24,8 +24,9 @@ vfb_history/
 # Documentação de terceiros baixada por `make refdocs` (não versionar)
 /docs/reference/_cache/
 
-# Dev Bridge (conexão com token) / TestUp
+# Dev Bridge (conexão com token) / TestUp / Laboratório (token da plataforma)
 .devbridge.env
+.lab.env
 /tests/sketchup/results/
 
 # Claude

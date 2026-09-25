@@ -2,6 +2,53 @@
 
 Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 
+## 2026-09-25 — Painel na plataforma + auditoria de erros (Dev Bridge 0.2.0)
+
+- Pasta de trabalho unificada: `plataforma-lilian-rosa-interiores/` com este
+  repositório e o da plataforma (`lilian-rosa-interiores`), cada um com seu
+  contexto. O contrato entre eles é a API `/api/laboratorio*` (`LAB_TOKEN`).
+- Painel: `/admin/laboratorio` na plataforma substitui o artifact "Painel
+  SketchUp" (mesmos blocos; imagens e modelo 3D em Vercel Blob privado).
+  Cliente `tools/lab/lab` (status, log, progress, image, model3d,
+  import-board). Migração do artifact testada local para status/progresso/log;
+  imagens dependem do Blob em produção.
+- Auditoria de erros (pedido da Lilian): Dev Bridge 0.2.0 com diário local
+  (`errors.jsonl`), escuta do console, erros do toolkit pelo barramento,
+  erro da própria ponte e detecção de sessão que morreu; envio para
+  `/admin/laboratorio/erros` (agrupado por assinatura, filtros, "corrigido"
+  que não apaga e "voltou").
+- **Erro no Start da ponte relatado pelo usuário**: não deu para ver a mensagem
+  (a ponte não respondia: túnel ok, porta aceitando, zero bytes — sinal de
+  listener que não atende). Arranque simulado do zero no Docker (toolkit e
+  ponte) passou. Hipótese: outro `SketchUp.exe` (segunda janela ou instância
+  travada) segurando a 7860. Correção: Start registra o erro na auditoria com o
+  PID/processo dono da porta e explica o que fazer; falha no workspace não
+  derruba mais a ponte. **A confirmar** com a mensagem real, depois de
+  instalar a 0.2.0.
+- Corrigido de brinde: `Events` zerava os assinantes a cada `su-reload`
+  (notificações de render paravam em dev).
+- 235 testes unitários (eram 204), lint limpo. **Não verificado ao vivo**:
+  escuta do console dentro do SketchUp real (se `puts`/`write` do
+  `SKETCHUP_CONSOLE` passam pelo Ruby — o tap cobre os dois casos, mas é
+  preciso ver), `Sketchup::Http::Request` para a plataforma, `onQuit`.
+
+- **Em produção** (https://lilian-rosa-interiores.vercel.app, deploy de 25/09):
+  migrations aplicadas (inclusive 3 anteriores que estavam pendentes), Blob
+  privado `lilian-rosa-laboratorio` ligado ao projeto, `LAB_TOKEN` em
+  Production/Preview, `.lab.env` local com o token. Painel do artifact
+  importado (status, progresso, log, 19 imagens, modelo 3D). Blob privado
+  verificado: admin lê (bytes iguais), anônimo 404, URL direta 403.
+- `su` registra na auditoria quando a ponte não responde (`BridgeUnresponsive`
+  ou `BridgeUnreachable`) e o `ping` desiste em 15 s (antes: 120 s). A falha de
+  hoje já está lá.
+
+Próximo (depende do desktop): instalar `me_dev_bridge-0.2.0.rbz` (em `dist/`
+ou no artefato do CI), reiniciar o SketchUp, *Dev Bridge › Error Audit
+Settings* com `https://lilian-rosa-interiores.vercel.app` e o `LAB_TOKEN`
+(está em `.lab.env`); depois `make su-eval` de um erro proposital para ver
+chegar na plataforma, e marcar o erro do Start como corrigido quando a causa
+for confirmada.
+
 ## 2026-09-25 — Módulo `layout_sheets` (pranchas do LayOut por cena)
 
 - Novo módulo `features/layout_sheets/`: uma prancha por cena do modelo salvo
@@ -48,7 +95,8 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
   razão papel/modelo (1:100 = 0.01) e a viewport centra no alvo da câmera.
 - Painel de acompanhamento (artifact "Painel SketchUp", privado):
   https://claude.ai/artifact/GqdpVJhwLbcVzWxSVp3WUw — status, progresso, log
-  e imagens (viewport + pranchas), atualizado pelo Claude durante o trabalho.
+  e imagens (viewport + pranchas). **Substituído em 25/09 por
+  `/admin/laboratorio` na plataforma** (ver entrada acima).
 
 - TestUp ao vivo: 26/26 (novos: escala na viewport ortogonal, extensão da
   cena em `ModelData.scenes`). `TC_ModelData` deixou de depender do modelo aberto.

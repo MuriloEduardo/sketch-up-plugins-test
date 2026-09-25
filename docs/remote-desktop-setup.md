@@ -106,6 +106,29 @@ o modelo aberto é trocado.
 O código enviado fica em `%APPDATA%\MuriloEduardoDev\workspace` na conta do
 dono e só é carregado pela Dev Bridge.
 
+## Auditoria de erros (Dev Bridge 0.2.0+)
+
+Pedido da dona do desktop: os erros que aparecem no SketchUp não podem se
+perder. A ponte grava **todo erro** num diário local e, se configurada, manda
+para a plataforma do estúdio (`/admin/laboratorio/erros`), onde ficam para
+sempre, agrupados, com pilha de chamadas e contexto.
+
+- O que entra: erros escritos no console do Ruby (SketchUp, V-Ray, qualquer
+  extensão), falhas das nossas ações e comandos, erros da própria ponte (ex.:
+  *Start* com a porta ocupada, com o PID de quem ocupa) e sessões que
+  terminaram sem o SketchUp fechar normalmente (travou, foi fechado pelo
+  Gerenciador de Tarefas, faltou luz).
+- Diário local: `%APPDATA%\MuriloEduardoDev\errors\errors.jsonl` (*Dev Bridge ›
+  Open Error Log Folder*). Nunca é reescrito; o envio só move um cursor.
+- Envio: *Dev Bridge › Error Audit Settings...* → URL da plataforma
+  (ex.: `https://<domínio do site>`) e o `LAB_TOKEN`. A cada 20 s a ponte manda
+  o que falta; sem rede, tenta de novo depois, sem duplicar.
+- Instalar a 0.2.0: `make dev-bridge-package` e instalar
+  `dist/me_dev_bridge-0.2.0.rbz` pelo *Extension Manager* (substitui a 0.1.x);
+  reiniciar o SketchUp.
+- A escuta do console é código só de desenvolvimento (o Extension Warehouse
+  proíbe mexer no console); não vai para o produto.
+
 ## Modo completo (opcional, só se o dono quiser)
 
 `.\setup-openssh.ps1 -PublicKey "..." -AllowShell` autoriza a chave sem
@@ -130,5 +153,6 @@ Rode o script de novo sem `-AllowShell` para voltar ao modo restrito.
 | `Host key verification failed` | a chave do desktop mudou (reinstalação?): `ssh-keygen -R <ip>` e conecte de novo |
 | `falta o token` | copie o comando da janela *Connection Info* |
 | `a ponte não respondeu` | SketchUp fechado ou Dev Bridge parada |
+| túnel abre mas a ponte nunca responde (timeout sem bytes) | a porta 7860 está com outro `SketchUp.exe` (segunda janela, ou uma instância travada em segundo plano): feche-o ou encerre no Gerenciador de Tarefas. A partir da 0.2.0, o *Start* diz o PID e o erro fica na auditoria |
 | `HTTP 401` | token regenerado no desktop: pegue o novo em *Connection Info* |
 | Diagnóstico SSH | `ssh -v -i ~/.ssh/id_ed25519_sketchup usuario@ip` (deve responder `tunnel-only`) |

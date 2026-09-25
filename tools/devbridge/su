@@ -127,8 +127,30 @@ def request(env, method, path, body=b"", headers=None, timeout=120):
         payload = error.read().decode("utf-8", "replace")
         fail(f"HTTP {error.code}: {payload}", 1 if error.code < 500 else 2)
     except (urllib.error.URLError, ConnectionError, TimeoutError) as error:
-        fail(f"a ponte não respondeu ({error}). O SketchUp está aberto e a Dev Bridge ligada "
-             "(Extensions › Dev Bridge › Start)?")
+        reason = getattr(error, "reason", error)
+        if isinstance(reason, TimeoutError):
+            kind, hint = "BridgeUnresponsive", (
+                "a porta aceitou a conexão, mas o SketchUp não respondeu em "
+                f"{timeout} s: outro SketchUp.exe segurando a porta (segunda janela ou instância travada), "
+                "ou uma janela modal aberta no SketchUp")
+        else:
+            kind, hint = "BridgeUnreachable", "ninguém escuta a porta: SketchUp fechado ou Dev Bridge parada"
+        report_to_lab(kind, f"{method} {path}: {hint}", {"error": str(error), "timeout_s": timeout,
+                                                          "ssh": env["SU_SSH"], "port": env.get("SU_PORT")})
+        fail(f"a ponte não respondeu ({error}): {hint}. "
+             "No desktop: Extensions › Dev Bridge › Connection Info / Start.")
+
+
+def report_to_lab(kind, message, context):
+    """Registra a falha na auditoria de erros da plataforma (tools/lab/lab error),
+    para que ela não se perca. Sem .lab.env, ou sem rede, só avisa."""
+    lab = REPO / "tools" / "lab" / "lab"
+    if not (REPO / ".lab.env").exists() and not os.environ.get("LAB_TOKEN"):
+        return
+    result = subprocess.run([sys.executable, str(lab), "error", kind, message, "--source", "bridge",
+                             "--context", json.dumps(context)], capture_output=True, text=True, timeout=30)
+    note = "registrado na auditoria de erros" if result.returncode == 0 else f"auditoria indisponível: {result.stderr.strip()}"
+    print(f"({note})", file=sys.stderr)
 
 
 def emit(result):
@@ -294,7 +316,8 @@ def main():
     connect.add_argument("--key", help="chave SSH privada (ex.: ~/.ssh/id_ed25519_sketchup)")
     connect.set_defaults(handler=cmd_connect)
 
-    commands.add_parser("ping").set_defaults(handler=lambda _a: emit(request(load_env(), "GET", "/ping")))
+    # 15 s: o ping só confere se a ponte responde; esperar 2 min não informa nada.
+    commands.add_parser("ping").set_defaults(handler=lambda _a: emit(request(load_env(), "GET", "/ping", timeout=15)))
 
     evaluate = commands.add_parser("eval")
     evaluate.add_argument("code", nargs="?")

@@ -36,6 +36,9 @@ make su-reload                    # envia src/ + tests/sketchup/ e recarrega
 tools/devbridge/su eval '<ruby>'  # executa no SketchUp do desktop, retorna JSON
 make su-test [FILTER=TC_X#]       # TestUp no desktop
 make vray-docs-import             # baixa a doc oficial da API V-Ray instalada no desktop
+# Painel de P&D na plataforma (/admin/laboratorio do repo irmão lilian-rosa-interiores;
+# .lab.env com LAB_URL e LAB_TOKEN):
+tools/lab/lab status activity="..." tests="235 ok"   # também: log, progress, image, model3d
 ```
 
 Sem Ruby no host: nunca rode `ruby`/`bundle` direto no WSL; use
@@ -58,7 +61,9 @@ products/<id>.json              produtos derivados (subconjunto de features), ge
 tests/unit/                     Minitest puro (Docker)
 tests/sketchup/                 TestUp (dentro do SketchUp), convenção TC_*.rb
 tools/build/                    empacotamento e runner de testes
-tools/devbridge/                Dev Bridge (extensão dev no desktop), cliente `su`, script OpenSSH
+tools/devbridge/                Dev Bridge (extensão dev no desktop), cliente `su`, script OpenSSH,
+                                auditoria de erros (diagnostics, error_journal, console_parser…)
+tools/lab/lab                   cliente do painel na plataforma (python3, sem dependências)
 tools/debug/                    bootstrap do debugger (template oficial; ainda não usado remotamente)
 tools/docs/                     geradores/atualizadores da base de referência
 docs/                           roadmap, progresso, decisões, arquitetura, workflow, referência
@@ -85,6 +90,11 @@ Arquitetura e topologia WSL ↔ desktop Windows ↔ Docker: `docs/architecture.m
   usuário que o dono do desktop não está usando o SketchUp. Nunca ler arquivos
   pessoais da conta dele além do necessário para a tarefa.
 - Git: commits pequenos em pt-BR, só quando o usuário pedir; rodar `make check` antes.
+- Painel de acompanhamento = `/admin/laboratorio` da plataforma (não mais o
+  artifact do claude.ai). Atualize-o com `tools/lab/lab` ao longo do trabalho.
+- Auditoria de erros: a Dev Bridge 0.2.0+ grava e envia todo erro do SketchUp
+  da Lilian (`/admin/laboratorio/erros`). Erro corrigido se marca lá como
+  corrigido (com commit); nunca se apaga.
 
 ## Memória do projeto
 
