@@ -11,6 +11,7 @@ module MuriloEduardo
           paper: { type: :enum, values: PageGeometry::PAPERS.keys, default: 'A3' },
           orientation: { type: :enum, values: %w[landscape portrait], default: 'landscape' },
           render_mode: { type: :enum, values: %w[raster hybrid vector], default: 'raster' },
+          scale: { type: :enum, values: Scale::CHOICES, default: 'auto' },
           index_sheet: { type: :boolean, default: true },
           export_pdf: { type: :boolean, default: true },
         }.freeze
@@ -19,13 +20,14 @@ module MuriloEduardo
         Text = Struct.new(:text, :x, :y, :font_size, :bold, keyword_init: true)
 
         # One LayOut page. `scene` is nil for the index sheet; `viewport` is
-        # the Box the scene is drawn in.
-        Sheet = Struct.new(:name, :scene, :viewport, :boxes, :texts, keyword_init: true)
+        # the Box the scene is drawn in; `scale` is the "1:N" denominator for
+        # orthographic scenes, nil otherwise.
+        Sheet = Struct.new(:name, :scene, :viewport, :boxes, :texts, :scale, keyword_init: true)
 
         # Plans the pages of a LayOut document with one sheet per scene:
         # viewport, title block and an optional index sheet.
         #
-        # Pure Ruby (needs {I18n}, {PageGeometry} and STRINGS loaded): unit
+        # Pure Ruby (needs {I18n}, {PageGeometry}, {Scale} and STRINGS loaded): unit
         # tested in the Docker toolchain. {Writer} turns the plan into a `.layout` file.
         class Planner
 
@@ -41,7 +43,8 @@ module MuriloEduardo
           # @return [PageGeometry]
           attr_reader :geometry
 
-          # @param scenes [Array<Hash>] `ModelData.scenes`: `{ name:, description: }`
+          # @param scenes [Array<Hash>] `ModelData.scenes`:
+          #   `{ name:, description:, perspective:, extent: }`
           # @param params [Hash] normalized with {SCHEMA}
           # @param project [String] shown in every title block (the model title)
           # @param date [String] shown in every title block
@@ -96,9 +99,18 @@ module MuriloEduardo
           private
 
           def scene_sheet(scene, number, total)
+            scale = scale_for(scene)
             Sheet.new(name: scene[:name], scene: scene[:name], viewport: geometry.drawing_area,
-                      boxes: geometry.title_block,
-                      texts: title_block_texts(scene[:name], scene[:description], number, total))
+                      boxes: geometry.title_block, scale: scale,
+                      texts: title_block_texts(scene[:name], scene[:description], number, total, scale))
+          end
+
+          # Orthographic scenes only: LayOut cannot scale a perspective view.
+          def scale_for(scene)
+            return nil if scene[:perspective] || scene[:extent].nil?
+            return Scale.parse(@params[:scale]) unless @params[:scale] == 'auto'
+
+            Scale.fit(scene[:extent], geometry.drawing_area)
           end
 
           def index_sheet(scene_names, total)
@@ -120,9 +132,10 @@ module MuriloEduardo
             end
           end
 
-          def title_block_texts(sheet_name, description, number, total)
+          def title_block_texts(sheet_name, description, number, total, scale = nil)
             project, sheet = geometry.title_block
             sheet_line = t(:sheet_number, number: format_number(number, total), total: format_number(total, total))
+            sheet_line += "  ·  #{t(:scale_label, scale: Scale.label(scale))}" if scale
             texts = [
               Text.new(text: @project, x: project.x + PADDING, y: project.y + PADDING, font_size: 14, bold: true),
               Text.new(text: sheet_name, x: sheet.x + PADDING, y: sheet.y + PADDING, font_size: 12, bold: true),

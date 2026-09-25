@@ -5,6 +5,7 @@ require_source 'me_vray_toolkit/core/i18n'
 require_source 'me_vray_toolkit/core/params'
 require_source 'me_vray_toolkit/features/layout_sheets/strings'
 require_source 'me_vray_toolkit/features/layout_sheets/page_geometry'
+require_source 'me_vray_toolkit/features/layout_sheets/scale'
 require_source 'me_vray_toolkit/features/layout_sheets/planner'
 
 class LayoutSheetsPlannerTest < Minitest::Test

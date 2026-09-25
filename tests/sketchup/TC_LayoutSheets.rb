@@ -62,6 +62,34 @@ module MuriloEduardo
           assert_equal('E.Fachada', viewport.scenes[viewport.current_scene])
         end
 
+        def test_orthographic_scene_gets_a_standard_scale
+          model = Sketchup.active_model
+          top = Sketchup::Camera.new([50, 50, 1000], [50, 50, 0], [0, 1, 0])
+          top.perspective = false
+          model.active_view.camera = top
+          saved_model_with_scenes('P.Planta')
+
+          result = LayoutSheets.generate(model, index_sheet: false, export_pdf: false)
+          viewport = Layout::Document.open(result[:layout_path]).pages.first.entities
+                                     .grep(Layout::SketchUpModel).first
+
+          assert_includes(LayoutSheets::Scale::DENOMINATORS, (1.0 / viewport.scale).round)
+        end
+
+        def test_scenes_report_extent_for_orthographic_cameras
+          model = Sketchup.active_model
+          model.active_entities.add_line([0, 0, 0], [100, 0, 0])
+          front = Sketchup::Camera.new([50, -500, 0], [50, 0, 0], [0, 0, 1])
+          front.perspective = false
+          model.active_view.camera = front
+          model.pages.add('E.Frente')
+
+          scene = ModelData.scenes(model).first
+
+          refute(scene[:perspective])
+          assert_in_delta(100.0, scene[:extent][0], 0.01)
+        end
+
         def test_generate_never_overwrites
           model = saved_model_with_scenes('P.Planta')
 

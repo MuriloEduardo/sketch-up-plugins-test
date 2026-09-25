@@ -75,6 +75,10 @@ module MuriloEduardo
             viewport.current_scene = viewport.scenes.index(sheet.scene) ||
                                      raise(ArgumentError, "scene not in saved file: #{sheet.scene}")
             viewport.render_mode = @render_mode
+            if sheet.scale
+              viewport.scale = 1.0 / sheet.scale
+              viewport.preserve_scale_on_resize = true
+            end
             @document.add_entity(viewport, @layer, page)
             viewport.render if viewport.render_needed?
           end

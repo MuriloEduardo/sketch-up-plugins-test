@@ -74,8 +74,14 @@ module MuriloEduardo
           assert_match(/me_vray_toolkit_test_texture\.png\z/, data[:texture_file])
         end
 
+        # TestUp reuses whatever model is open (it may be saved), so the
+        # unsaved and saved models are simulated.
         def test_folder_is_nil_for_unsaved_model
-          assert_nil(ModelData.folder(Sketchup.active_model))
+          assert_nil(ModelData.folder(Struct.new(:path).new('')))
+        end
+
+        def test_folder_of_saved_model
+          assert_equal('C:/proj', ModelData.folder(Struct.new(:path).new('C:/proj/Casa.skp')))
         end
 
       end

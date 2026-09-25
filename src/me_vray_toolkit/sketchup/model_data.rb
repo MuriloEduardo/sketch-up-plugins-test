@@ -55,9 +55,30 @@ module MuriloEduardo
       private_class_method :count_entities
 
       # @param model [Sketchup::Model]
-      # @return [Array<Hash>] one per scene, in tab order: `{ name:, description: }`
+      # @return [Array<Hash>] one per scene, in tab order:
+      #   `{ name:, description:, perspective:, extent: }`; `extent` is the
+      #   [width, height] of the whole model as the scene's orthographic camera
+      #   sees it, centered on the camera target (nil for perspective scenes
+      #   and empty models), in inches
       def self.scenes(model)
-        model.pages.map { |page| { name: page.name, description: page.description } }
+        bounds = model.bounds
+        model.pages.map do |page|
+          camera = page.camera
+          extent = camera.perspective? || bounds.empty? ? nil : view_extent(camera, bounds)
+          { name: page.name, description: page.description, perspective: camera.perspective?, extent: extent }
+        end
+      end
+
+      # Twice the farthest distance from the camera target to a corner of
+      # `bounds`, along the camera's horizontal and vertical axes. The view is
+      # centered on the target, so this size shows everything.
+      #
+      # @param camera [Sketchup::Camera]
+      # @param bounds [Geom::BoundingBox]
+      # @return [Array(Float, Float)]
+      def self.view_extent(camera, bounds)
+        offsets = (0..7).map { |index| camera.target.vector_to(bounds.corner(index)) }
+        [camera.xaxis, camera.yaxis].map { |axis| offsets.map { |offset| offset.dot(axis).abs }.max * 2 }
       end
 
       # @param model [Sketchup::Model]

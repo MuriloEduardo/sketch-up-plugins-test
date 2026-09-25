@@ -40,7 +40,20 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
   "zoom extents". Próximo item: calcular escala técnica que caiba (1:20…1:500)
   para cenas ortogonais e mostrá-la no carimbo.
 
-Próximo: escala automática das vistas ortogonais; depois template `.layout` do usuário + auto-texto de cena/escala (P4.4),
+- Escala automática das vistas ortogonais (feita, sem commit): `Scale.fit`
+  escolhe a maior escala padrão (1:1…1:5000) em que a extensão do modelo,
+  vista pela câmera da cena e centrada no alvo, cabe em 90% da viewport;
+  parâmetro `scale` (auto ou fixa); carimbo mostra "Escala 1:N". Ao vivo:
+  planta e fachada inteiras em 1:25. Verificado: `SketchUpModel#scale` é a
+  razão papel/modelo (1:100 = 0.01) e a viewport centra no alvo da câmera.
+- Painel de acompanhamento (artifact "Painel SketchUp", privado):
+  https://claude.ai/artifact/GqdpVJhwLbcVzWxSVp3WUw — status, progresso, log
+  e imagens (viewport + pranchas), atualizado pelo Claude durante o trabalho.
+
+- TestUp ao vivo: 26/26 (novos: escala na viewport ortogonal, extensão da
+  cena em `ModelData.scenes`). `TC_ModelData` deixou de depender do modelo aberto.
+
+Próximo: template `.layout` do usuário + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap

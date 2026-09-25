@@ -5,6 +5,7 @@ Sketchup.require('me_vray_toolkit/core/i18n')
 Sketchup.require('me_vray_toolkit/core/input_form')
 Sketchup.require('me_vray_toolkit/core/params')
 Sketchup.require('me_vray_toolkit/features/layout_sheets/page_geometry')
+Sketchup.require('me_vray_toolkit/features/layout_sheets/scale')
 Sketchup.require('me_vray_toolkit/features/layout_sheets/planner')
 Sketchup.require('me_vray_toolkit/features/layout_sheets/strings')
 Sketchup.require('me_vray_toolkit/features/layout_sheets/writer')
@@ -106,7 +107,8 @@ module MuriloEduardo
                 case value
                 when true then t(:answer_yes)
                 when false then t(:answer_no)
-                when *PageGeometry::PAPERS.keys then value
+                when 'auto' then t(:scale_auto)
+                when *PageGeometry::PAPERS.keys, *Scale::CHOICES then value
                 else t(:"#{name}_#{value}")
                 end
               end
