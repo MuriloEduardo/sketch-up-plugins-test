@@ -138,6 +138,7 @@ do desktop com V-Ray e LayOut, através de ferramentas de alto nível
 | L5 | Ferramentas de render: materiais V-Ray, luzes, configurações por cena, render/lote, salvar imagens | ideia |
 | L6 | Ferramentas de detalhamento/LayOut: pranchas, viewports, cotas, textos, PDF | ideia |
 | L7 | Skills/prompts de fluxo (ex.: "apresentação de interiores": cenas → materiais → render → pranchas) | ideia |
+| L0 | Arquitetura em `docs/mcp.md` (2026-09-25): Modo 1 local (127.0.0.1 + token) e Modo 2 login + relay na nuvem; 4 camadas de ferramentas; catálogo com teste de cobertura | em andamento |
 | L9 | **Catálogo máximo de ferramentas** (pedido 2026-09-25): inventário das APIs SketchUp + LayOut + V-Ray → lista de ferramentas por grupo (modelo, cenas, tags, materiais, V-Ray, render, LayOut), ligáveis por grupo; ferramentas genéricas-seguras (consulta de entidades, parâmetro V-Ray de lista permitida) para cobrir muita API com poucas tools | ideia |
 | L10 | Registro de ações → JSON Schema → servidor MCP gerado automaticamente (cada feature nova vira tool) | ideia |
 | L11 | Skills públicas (pacotes de fluxo que usam as tools) para agentes de qualquer fornecedor | ideia |
