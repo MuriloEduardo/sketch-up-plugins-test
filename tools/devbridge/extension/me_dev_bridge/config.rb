@@ -18,7 +18,8 @@ module MuriloEduardoDev
 
       DEFAULTS = {
         'port' => 7860,
-        # Off by default: start it from the Extensions menu when needed.
+        # Off by default. The machine owner can turn it on or off from the
+        # menu (Extensions › Dev Bridge › Start Automatically).
         'autostart' => false,
       }.freeze
 
@@ -37,6 +38,12 @@ module MuriloEduardoDev
       def port = Integer(@data.fetch('port'))
       def autostart? = @data.fetch('autostart') == true
       def token = @data.fetch('token')
+
+      # @param value [Boolean] start the bridge when SketchUp loads it
+      def autostart=(value)
+        @data['autostart'] = value == true
+        save
+      end
 
       # @return [String] the new token
       def regenerate_token

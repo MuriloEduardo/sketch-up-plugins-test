@@ -19,6 +19,9 @@ make su-*  ──SSH (chave só-túnel)──►  OpenSSH Server
 - **Ele controla o acesso:** a ponte vem desligada e só funciona enquanto ele
   deixar ligada (*Extensions › Dev Bridge (DEV ONLY) › Start/Stop*). Com a
   ponte desligada, a chave SSH não dá acesso a nada no computador.
+  *Start Automatically* (0.1.2+, marcado = ligado; ou `"autostart": true` em
+  `%APPDATA%\MuriloEduardoDev\config.json`) liga a ponte sempre que o SketchUp
+  abre; combine isso com ele, que pode desmarcar a qualquer momento.
 - **Não atrapalhar o trabalho dele:** eval, reload e principalmente
   `make su-test` rodam no SketchUp aberto, travam a janela enquanto executam
   e os testes **trocam o modelo aberto por um vazio**. Só rode quando ele não

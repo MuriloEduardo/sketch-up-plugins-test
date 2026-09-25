@@ -14,7 +14,7 @@ Sketchup.require('me_dev_bridge/testup_runner')
 module MuriloEduardoDev
   module DevBridge
 
-    BRIDGE_VERSION = '0.1.1'
+    BRIDGE_VERSION = '0.1.2'
     MENU_TITLE = 'Dev Bridge (DEV ONLY)'
 
     # @return [String] %APPDATA%/MuriloEduardoDev
@@ -119,6 +119,8 @@ module MuriloEduardoDev
       menu.add_item('Connection Info...') { show_connection_info }
       menu.add_item('Start') { start }
       menu.add_item('Stop') { stop }
+      autostart_item = menu.add_item('Start Automatically') { config.autostart = !config.autostart? }
+      menu.set_validation_proc(autostart_item) { config.autostart? ? MF_CHECKED : MF_UNCHECKED }
       menu.add_item('Regenerate Token...') { regenerate_token }
       menu.add_item('Open Data Folder') { UI.openURL("file:///#{data_dir}") }
       file_loaded(__FILE__)

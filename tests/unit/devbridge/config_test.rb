@@ -41,6 +41,15 @@ class DevBridgeConfigTest < Minitest::Test
     refute(Config.new(@path).autostart?)
   end
 
+  def test_autostart_setting_is_saved
+    Config.new(@path).autostart = true
+
+    assert(Config.new(@path).autostart?)
+    Config.new(@path).autostart = false
+
+    refute(Config.new(@path).autostart?)
+  end
+
   def test_regenerate_token_changes_and_persists
     config = Config.new(@path)
     old = config.token
