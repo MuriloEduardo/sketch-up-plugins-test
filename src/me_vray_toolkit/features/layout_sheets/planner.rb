@@ -14,6 +14,9 @@ module MuriloEduardo
           scale: { type: :enum, values: Scale::CHOICES, default: 'auto' },
           index_sheet: { type: :boolean, default: true },
           export_pdf: { type: :boolean, default: true },
+          # A .layout whose frame and title block every sheet uses; empty = the
+          # toolkit draws its own (then paper and orientation apply).
+          template: { type: :string, default: '' },
         }.freeze
 
         # A text on a sheet; `x`/`y` is its top left corner in paper inches.
@@ -25,9 +28,11 @@ module MuriloEduardo
         Sheet = Struct.new(:name, :scene, :viewport, :boxes, :texts, :scale, keyword_init: true)
 
         # Plans the pages of a LayOut document with one sheet per scene:
-        # viewport, title block and an optional index sheet.
+        # viewport, title block and an optional index sheet. With a user
+        # template ({TemplateGeometry}) the template draws the title block
+        # and each viewport gets a caption (scene, description, scale).
         #
-        # Pure Ruby (needs {I18n}, {PageGeometry}, {Scale} and STRINGS loaded): unit
+        # Pure Ruby (needs {I18n}, {PageGeometry}, {Scale}, {SceneFilter} and STRINGS loaded): unit
         # tested in the Docker toolchain. {Writer} turns the plan into a `.layout` file.
         class Planner
 
@@ -36,11 +41,13 @@ module MuriloEduardo
           INDEX_TOP = 0.5
           INDEX_LINE_HEIGHT = 0.25
           INDEX_COLUMN_WIDTH = 3.6
+          CAPTION_HEIGHT = 0.35
+          CAPTION_OFFSET = 0.1
 
           # @return [Array<Hash>] the scenes that get a sheet, in model order
           attr_reader :scenes
 
-          # @return [PageGeometry]
+          # @return [PageGeometry, TemplateGeometry]
           attr_reader :geometry
 
           # @param scenes [Array<Hash>] `ModelData.scenes`:
@@ -48,36 +55,14 @@ module MuriloEduardo
           # @param params [Hash] normalized with {SCHEMA}
           # @param project [String] shown in every title block (the model title)
           # @param date [String] shown in every title block
-          def initialize(scenes:, params:, project:, date:)
+          # @param geometry [PageGeometry, TemplateGeometry, nil] nil = the
+          #   toolkit's own sheet for `params[:paper]`
+          def initialize(scenes:, params:, project:, date:, geometry: nil)
             @params = params
             @project = project.to_s
             @date = date.to_s
-            @geometry = PageGeometry.new(params[:paper], params[:orientation])
-            @scenes = self.class.matching(scenes, params[:prefix])
-          end
-
-          # @param scenes [Array<Hash>]
-          # @param prefix [String] comma separated name prefixes, any case;
-          #   blank keeps every scene
-          # @return [Array<Hash>]
-          def self.matching(scenes, prefix)
-            prefixes = prefix.to_s.split(',').map(&:strip).reject(&:empty?).map(&:downcase)
-            return scenes if prefixes.empty?
-
-            scenes.select { |scene| prefixes.any? { |start| scene[:name].to_s.downcase.start_with?(start) } }
-          end
-
-          # A free file name next to the model, so an existing document (and
-          # the user's edits in it) is never overwritten.
-          #
-          # @param model_path [String] the saved `.skp`
-          # @param exists [#call] receives a path, returns true if it is taken
-          # @return [String] path without extension (add `.layout` / `.pdf`)
-          def self.output_base(model_path, exists:)
-            base = File.join(File.dirname(model_path), File.basename(model_path, '.*'))
-            candidates = [base] + (2..999).map { |number| "#{base} (#{number})" }
-            candidates.find { |candidate| %w[.layout .pdf].none? { |ext| exists.call("#{candidate}#{ext}") } } or
-              raise ArgumentError, "no free file name for #{base}"
+            @geometry = geometry || PageGeometry.new(params[:paper], params[:orientation])
+            @scenes = SceneFilter.matching(scenes, params[:prefix])
           end
 
           # @return [Array(Float, Float)] paper width and height, in inches
@@ -99,26 +84,52 @@ module MuriloEduardo
           private
 
           def scene_sheet(scene, number, total)
-            scale = scale_for(scene)
-            Sheet.new(name: scene[:name], scene: scene[:name], viewport: geometry.drawing_area,
-                      boxes: geometry.title_block, scale: scale,
-                      texts: title_block_texts(scene[:name], scene[:description], number, total, scale))
+            viewport = viewport_box
+            scale = scale_for(scene, viewport)
+            texts = if own_title_block?
+                      title_block_texts(scene[:name], scene[:description], number, total, scale)
+                    else
+                      [caption(scene, scale)]
+                    end
+            Sheet.new(name: scene[:name], scene: scene[:name], viewport: viewport, boxes: geometry.title_block,
+                      scale: scale, texts: texts)
+          end
+
+          def own_title_block?
+            !geometry.title_block.empty?
+          end
+
+          # With a template, the bottom of the drawing area holds the caption.
+          def viewport_box
+            area = geometry.drawing_area
+            return area if own_title_block?
+
+            Box.new(x: area.x, y: area.y, width: area.width, height: area.height - CAPTION_HEIGHT)
+          end
+
+          def caption(scene, scale)
+            area = geometry.drawing_area
+            parts = [scene[:name], scene[:description].to_s.strip]
+            parts << t(:scale_label, scale: Scale.label(scale)) if scale
+            Text.new(text: parts.reject(&:empty?).join('  ·  '), x: area.x,
+                     y: area.y + area.height - CAPTION_HEIGHT + CAPTION_OFFSET, font_size: 10, bold: true)
           end
 
           # Orthographic scenes only: LayOut cannot scale a perspective view.
-          def scale_for(scene)
+          def scale_for(scene, viewport)
             return nil if scene[:perspective] || scene[:extent].nil?
             return Scale.parse(@params[:scale]) unless @params[:scale] == 'auto'
 
-            Scale.fit(scene[:extent], geometry.drawing_area)
+            Scale.fit(scene[:extent], viewport)
           end
 
           def index_sheet(scene_names, total)
             area = geometry.drawing_area
             heading = Text.new(text: t(:index_title), x: area.x, y: area.y, font_size: 16, bold: true)
             columns = index_columns([t(:index_title)] + scene_names, area)
+            block = own_title_block? ? title_block_texts(t(:index_title), '', 1, total) : []
             Sheet.new(name: t(:index_title), scene: nil, viewport: nil, boxes: geometry.title_block,
-                      texts: [heading] + columns + title_block_texts(t(:index_title), '', 1, total))
+                      texts: [heading] + columns + block)
           end
 
           # Lists every sheet ("01  Name"), wrapping into columns.

@@ -2,44 +2,30 @@
 
 Sketchup.require('me_vray_toolkit/core/commands')
 Sketchup.require('me_vray_toolkit/core/i18n')
-Sketchup.require('me_vray_toolkit/core/input_form')
 Sketchup.require('me_vray_toolkit/core/params')
+Sketchup.require('me_vray_toolkit/features/layout_sheets/output_path')
 Sketchup.require('me_vray_toolkit/features/layout_sheets/page_geometry')
 Sketchup.require('me_vray_toolkit/features/layout_sheets/scale')
+Sketchup.require('me_vray_toolkit/features/layout_sheets/scene_filter')
 Sketchup.require('me_vray_toolkit/features/layout_sheets/planner')
 Sketchup.require('me_vray_toolkit/features/layout_sheets/strings')
+Sketchup.require('me_vray_toolkit/features/layout_sheets/template_geometry')
 Sketchup.require('me_vray_toolkit/features/layout_sheets/writer')
+Sketchup.require('me_vray_toolkit/features/layout_sheets/dialog')
 Sketchup.require('me_vray_toolkit/sketchup/model_data')
 
 module MuriloEduardo
   module VRayToolkit
     module Features
       # Creates a LayOut document with one sheet per scene of the saved model
-      # (viewport + title block), an optional sheet index and a PDF. Writes
-      # new files next to the model; never changes the model or overwrites
-      # an existing file.
+      # (viewport + title block, ours or the user's template), an optional
+      # sheet index and a PDF. Writes new files next to the model; never
+      # changes the model or overwrites an existing file. The menu command
+      # lives in {Dialog}.
       module LayoutSheets
 
         # A problem the user can fix; the message is already translated.
         class Error < StandardError; end
-
-        # The last input in this session, offered again by the dialog.
-        @last_input = {}
-
-        # Asks for the options and generates the sheets for the active model.
-        def self.run
-          model = Sketchup.active_model
-          return UI.messagebox(t(:layout_unavailable)) unless Writer.available?
-          return unless ready_to_use?(model)
-
-          input = ask
-          return if input.nil?
-
-          result = generate(model, input)
-          UI.messagebox(summary(result), MB_MULTILINE, t(:title))
-        rescue Error => error
-          UI.messagebox(error.message)
-        end
 
         # The typed action: same input from the menu, tests or an MCP tool.
         #
@@ -55,71 +41,46 @@ module MuriloEduardo
 
           # Windows paths come with backslashes; LayOut and File accept '/'.
           model_path = model.path.tr('\\', '/')
+          template = template_path(params[:template])
 
-          saved_scenes = Writer.scene_names(model_path)
-          wanted = Planner.matching(ModelData.scenes(model), params[:prefix])
-          raise Error, no_scenes_message(params) if wanted.empty?
-
-          usable, skipped = wanted.partition { |scene| saved_scenes.include?(scene[:name]) }
-          planner = Planner.new(scenes: usable, params: params, project: model.title,
-                                date: Time.now.strftime(t(:date_format)))
+          planner, skipped = plan(model, model_path, params, template)
           sheets = planner.sheets
-          raise Error, t(:skipped, scenes: names(skipped)) if sheets.empty?
-
-          base = Planner.output_base(model_path, exists: File.method(:exist?))
+          base = OutputPath.base(model_path, exists: File.method(:exist?))
           layout_path = "#{base}.layout"
           pdf_path = params[:export_pdf] ? "#{base}.pdf" : nil
-          Writer.new(model_path: model_path, render_mode: params[:render_mode])
+          Writer.new(model_path: model_path, render_mode: params[:render_mode], template: template)
                 .write(sheets, paper: planner.paper_size, layout_path: layout_path, pdf_path: pdf_path)
           { layout_path: layout_path, pdf_path: pdf_path, sheets: sheets.map(&:name),
             skipped: skipped.map { |scene| scene[:name] }, }
         end
 
-        # @param model [Sketchup::Model]
-        # @return [Boolean] false if the user must save first or cancelled
-        def self.ready_to_use?(model)
-          if model.path.empty?
-            UI.messagebox(t(:not_saved))
-            return false
-          end
-          return true unless model.modified?
+        # @return [Array(Planner, Array<Hash>)] the plan and the scenes left
+        #   out because the saved file does not have them yet
+        # @raise [Error] when no scene can get a sheet
+        def self.plan(model, model_path, params, template)
+          saved_scenes = Writer.scene_names(model_path)
+          wanted = SceneFilter.matching(ModelData.scenes(model), params[:prefix])
+          raise Error, no_scenes_message(params) if wanted.empty?
 
-          case UI.messagebox(t(:save_changes), MB_YESNOCANCEL)
-          when IDYES then model.save
-          when IDNO then true
-          else false
-          end
+          usable, skipped = wanted.partition { |scene| saved_scenes.include?(scene[:name]) }
+          raise Error, t(:skipped, scenes: names(skipped)) if usable.empty?
+
+          geometry = template && TemplateGeometry.new(**Writer.template_facts(template))
+          planner = Planner.new(scenes: usable, params: params, project: model.title,
+                                date: Time.now.strftime(t(:date_format)), geometry: geometry)
+          [planner, skipped]
         end
 
-        # @return [Hash, nil] nil when cancelled
-        def self.ask
-          answers = UI.inputbox(form.prompts, form.defaults(@last_input), form.lists, t(:title))
-          return nil unless answers
+        # @param path [String] from the input; blank = no template
+        # @return [String, nil]
+        # @raise [Error] if it is not an existing .layout file
+        def self.template_path(path)
+          return nil if path.strip.empty?
 
-          @last_input = Params.normalize(SCHEMA, form.parse(answers))
-        end
+          path = path.tr('\\', '/')
+          raise Error, t(:template_not_found, path: path) unless File.file?(path) && path.downcase.end_with?('.layout')
 
-        def self.form
-          InputForm.new(
-              SCHEMA,
-              label: ->(name) { t(:"prompt_#{name}") },
-              option_label: lambda do |name, value|
-                case value
-                when true then t(:answer_yes)
-                when false then t(:answer_no)
-                when 'auto' then t(:scale_auto)
-                when *PageGeometry::PAPERS.keys, *Scale::CHOICES then value
-                else t(:"#{name}_#{value}")
-                end
-              end
-            )
-        end
-
-        def self.summary(result)
-          lines = [t(:done, count: result[:sheets].size, layout: result[:layout_path])]
-          lines << t(:done_pdf, pdf: result[:pdf_path]) if result[:pdf_path]
-          lines << t(:skipped, scenes: result[:skipped].join(', ')) unless result[:skipped].empty?
-          lines.join("\n\n")
+          path
         end
 
         def self.no_scenes_message(params)
@@ -134,9 +95,9 @@ module MuriloEduardo
           I18n.t(STRINGS, key, **values)
         end
 
-        private_class_method :ask, :form, :summary, :no_scenes_message, :names, :t
+        private_class_method :plan, :no_scenes_message, :names, :t
 
-        Commands.register(id: :layout_sheets, title: -> { I18n.t(STRINGS, :menu_item) }, order: 15) { run }
+        Commands.register(id: :layout_sheets, title: -> { I18n.t(STRINGS, :menu_item) }, order: 15) { Dialog.run }
 
       end
     end

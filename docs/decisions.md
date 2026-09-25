@@ -109,6 +109,16 @@ carimbo e índice são desenhados por código (não dependem do template nem do
 auto-texto do usuário, que variam por instalação e idioma). Template do usuário
 e auto-texto de cena/escala ficam para uma próxima versão (P4.4).
 
+### 2026-09-25 — Template do usuário: carimbo dele, viewport no maior espaço livre
+Com template, o documento nasce de `Document.new(template)`, mantém só a
+página que mostra camadas compartilhadas (a "interna") e cria as demais com
+`pages.add`, que repetem moldura e carimbo. A área do desenho é o maior
+retângulo livre dentro da moldura (retângulo > 50% da folha; sem moldura, as
+margens), sem cruzar nenhuma peça visível do carimbo; embaixo vai uma legenda
+(cena · descrição · escala). Não preenchemos o auto-texto do template (é do
+usuário). Motivo: funciona com carimbo em faixa, em coluna ou fora da
+moldura sem o usuário marcar nada; verificado com Contemporary e Simple.
+
 ### 2026-09-25 — Pilar P8 começa com `Params` + `InputForm`
 Cada feature declara um `SCHEMA` (string, boolean, integer, enum com
 default/valores). `Params.normalize` valida a entrada de qualquer origem

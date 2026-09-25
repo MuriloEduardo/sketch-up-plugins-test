@@ -30,23 +30,63 @@ module MuriloEduardo
             probe.scenes.drop(1)
           end
 
+          # What {TemplateGeometry} needs from a template: paper, margins
+          # and the bounds of what its sheet page shows.
+          #
+          # @param template_path [String] `.layout`
+          # @return [Hash] `{ width:, height:, margins:, boxes: }`
+          def self.template_facts(template_path)
+            document = Layout::Document.open(template_path)
+            info = document.page_info
+            page = sheet_page(document)
+            visible = page.entities.select { |entity| page.layer_visible?(entity.layer_instance.definition) }
+            {
+              width: info.width, height: info.height,
+              margins: { left: info.left_margin, top: info.top_margin, right: info.right_margin,
+                         bottom: info.bottom_margin, },
+              boxes: visible.map { |entity| box(entity.bounds) },
+            }
+          end
+
+          # The page every sheet copies: the last page showing a shared
+          # layer (templates show their title block on "inside" pages that
+          # way and hide it on the cover), else the last page.
+          #
+          # @param document [Layout::Document]
+          # @return [Layout::Page]
+          def self.sheet_page(document)
+            shared = document.layers.select(&:shared?)
+            pages = document.pages.to_a
+            pages.reverse.find { |page| shared.any? { |layer| page.layer_visible?(layer) } } || pages.last
+          end
+
+          # @param bounds [Geom::Bounds2d]
+          # @return [Box]
+          def self.box(bounds)
+            Box.new(x: bounds.upper_left.x, y: bounds.upper_left.y, width: bounds.width, height: bounds.height)
+          end
+
           # @param model_path [String] saved `.skp` the viewports reference
           # @param render_mode [String] a key of RENDER_MODES
-          def initialize(model_path:, render_mode:)
+          # @param template [String, nil] `.layout` to start from
+          def initialize(model_path:, render_mode:, template: nil)
             @model_path = model_path
             @render_mode = Layout::SketchUpModel.const_get(RENDER_MODES.fetch(render_mode))
-            @document = Layout::Document.new
-            @layer = @document.layers.active
+            @template = template
+            @document = template ? Layout::Document.new(template) : Layout::Document.new
+            @first_page = template ? keep_only_sheet_page : @document.pages.first
+            @layer = content_layer
           end
 
           # @param sheets [Array<Sheet>]
-          # @param paper [Array(Float, Float)] width, height in inches
+          # @param paper [Array(Float, Float)] width, height in inches; a
+          #   template keeps its own
           # @param layout_path [String] must not exist yet
           # @param pdf_path [String, nil]
           def write(sheets, paper:, layout_path:, pdf_path: nil)
-            setup_paper(paper)
+            setup_paper(paper) unless @template
             sheets.each_with_index do |sheet, index|
-              page = index.zero? ? @document.pages.first : @document.pages.add
+              page = index.zero? ? @first_page : @document.pages.add
               page.name = sheet.name
               add_viewport(page, sheet) if sheet.scene
               sheet.boxes.each { |box| add_box(page, box) }
@@ -57,6 +97,25 @@ module MuriloEduardo
           end
 
           private
+
+          # Drops the cover and other pages; new pages repeat the template's
+          # shared layers (frame and title block).
+          def keep_only_sheet_page
+            page = self.class.sheet_page(@document)
+            # Layout::Page defines == but not eql?/hash, so Array#- keeps it.
+            @document.pages.to_a.reject { |other| other == page }.each { |other| @document.pages.remove(other) }
+            page
+          end
+
+          # Our entities go on a normal, editable layer, never on a shared one
+          # (they would repeat on every page).
+          def content_layer
+            layers = @document.layers
+            usable = ->(layer) { !layer.shared? && !layer.locked? }
+            return layers.active if usable.call(layers.active)
+
+            layers.find(&usable) || layers.add('V-Ray Toolkit')
+          end
 
           def setup_paper(paper)
             page_info = @document.page_info

@@ -94,3 +94,25 @@ usuário abre (ou exportamos PDF direto). [fórum 236504, DanRathbun]
 - `Document#save` sobre um `.layout` existente deixa um `Backup of <nome>.layout`
   ao lado. Nunca salve por cima do arquivo do usuário.
 - `Document#export("…/page.png", dpi: 40)` gera `page_<n>_<nome da página>.png`.
+- `SketchUpModel#scale` = razão papel/modelo (1:100 → `0.01`); a viewport fica
+  centrada no **alvo** da câmera da cena, e a altura da câmera ortogonal
+  define o zoom inicial (daí o corte na largura quando a proporção difere).
+- `Layout::Page` define `==` mas **não** `eql?`/`hash`: `pages.to_a - [page]`
+  não remove nada. Use `reject { |other| other == page }`.
+- `page.entities` inclui entidades de camadas **ocultas** naquela página (a
+  capa aparece na página interna): filtre com `page.layer_visible?(entity.layer_instance.definition)`.
+
+## Templates de carimbo (SketchUp 2026, verificado ao vivo em 2026-09-25)
+
+- 120 templates em `C:/ProgramData/SketchUp/SketchUp 2026/Layout/templates`
+  (+ `pt-br/Templates`); 60 em `Titleblock/<estilo>/<papel>.layout`.
+- Estrutura típica: 2 páginas (*Cover Page*, *Inside Page*); camada
+  **compartilhada** "On Every Inside Page" com moldura + carimbo, visível só na
+  página interna; camada "Cover Page" só na capa; camada ativa "Default"
+  (não compartilhada) para o conteúdo.
+- A moldura é um `Rectangle` que cobre > 50% da folha; o carimbo é faixa
+  inferior (Contemporary) ou coluna lateral fora da moldura (Modern, Simple).
+- Auto-texto personalizado (`TYPE_CUSTOM_TEXT`) com valores de exemplo
+  ("PROJECT TITLE", "AUTHOR NAME", `<ClientName>`…); `<PageNumber>` numera sozinho.
+- `Document.new(template)` copia as páginas; `pages.remove` tira a capa;
+  `pages.add` cria página que já mostra as camadas compartilhadas.

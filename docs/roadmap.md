@@ -109,10 +109,10 @@ Concorrência forte; diferenciar por personalização e integração.
 ### Fase 5 — Produto 4: **LayOut automático** (prioridade 1)
 | # | Funcionalidade | Evidência | Status |
 |---|---|---|---|
-| P4.1 | Gerar pranchas LayOut a partir das cenas (por prefixo, ex.: `E.Front`, `P.Kitchen1`) com template | 236504; LayOut FR: 143 pedidos de documentação | em andamento: módulo `layout_sheets` (papel/orientação, carimbo, índice, PDF); falta TestUp ao vivo e template do usuário |
+| P4.1 | Gerar pranchas LayOut a partir das cenas (por prefixo, ex.: `E.Front`, `P.Kitchen1`) com template | 236504; LayOut FR: 143 pedidos de documentação | beta: módulo `layout_sheets` (papel/orientação, carimbo, índice, PDF, escala, template do usuário), TestUp ao vivo |
 | P4.2 | Pranchas de renders V-Ray + legendas | combina P1 + P4.1 | ideia |
 | P4.3 | Índice de pranchas / lista de desenhos automática (1ª versão em `layout_sheets`) | LayOut FR: 4,6 mil + 2,5 mil + 2,1 mil visualizações | ideia |
-| P4.4 | Carimbo com nome da cena, escala, nº/total, data (texto gerado; auto-text quando a API permitir) | 7,8 mil + 5,1 mil visualizações | ideia |
+| P4.4 | Carimbo com nome da cena, escala, nº/total, data (texto gerado; auto-text quando a API permitir) — feito: carimbo próprio com escala automática, ou **template do usuário** com legenda por viewport | 7,8 mil + 5,1 mil visualizações | beta |
 | P4.5 | Regenerar pranchas quando o modelo muda (a API não tem "Update Model Reference") | "Reloading new models…", "Shortcut to update Layout reference" | ideia |
 | P4.6 | Exportar um PDF por prancha | "Layout export to separate files per page" | ideia |
 

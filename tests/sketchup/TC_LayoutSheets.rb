@@ -121,7 +121,7 @@ module MuriloEduardo
         def test_saved_unmodified_model_is_ready_without_asking
           model = saved_model_with_scenes('P.Planta')
 
-          assert(LayoutSheets.ready_to_use?(model))
+          assert(LayoutSheets::Dialog.ready_to_use?(model))
         end
 
         def test_no_matching_scene_is_an_error

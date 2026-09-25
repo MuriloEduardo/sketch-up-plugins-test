@@ -6,7 +6,9 @@ require_source 'me_vray_toolkit/core/params'
 require_source 'me_vray_toolkit/features/layout_sheets/strings'
 require_source 'me_vray_toolkit/features/layout_sheets/page_geometry'
 require_source 'me_vray_toolkit/features/layout_sheets/scale'
+require_source 'me_vray_toolkit/features/layout_sheets/scene_filter'
 require_source 'me_vray_toolkit/features/layout_sheets/planner'
+require_source 'me_vray_toolkit/features/layout_sheets/output_path'
 
 class LayoutSheetsPlannerTest < Minitest::Test
 
@@ -103,13 +105,13 @@ class LayoutSheetsPlannerTest < Minitest::Test
   def test_output_base_never_reuses_an_existing_file
     taken = ['C:/proj/Casa.layout', 'C:/proj/Casa (2).pdf']
 
-    base = Planner.output_base('C:/proj/Casa.skp', exists: ->(path) { taken.include?(path) })
+    base = LayoutSheets::OutputPath.base('C:/proj/Casa.skp', exists: ->(path) { taken.include?(path) })
 
     assert_equal('C:/proj/Casa (3)', base)
   end
 
   def test_output_base_uses_model_name_when_free
-    assert_equal('C:/proj/Casa', Planner.output_base('C:/proj/Casa.skp', exists: ->(_path) { false }))
+    assert_equal('C:/proj/Casa', LayoutSheets::OutputPath.base('C:/proj/Casa.skp', exists: ->(_path) { false }))
   end
 
   def test_every_locale_translates_every_key

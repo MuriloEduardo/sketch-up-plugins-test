@@ -73,3 +73,8 @@ Naming/FileName:
 Naming/ClassAndModuleCamelCase:
   Exclude:
     - tests/sketchup/**/*
+
+# Tabelas de tradução são dados: crescem uma linha por texto e idioma.
+Metrics/ModuleLength:
+  Exclude:
+    - src/*/features/*/strings.rb

@@ -53,7 +53,14 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
 - TestUp ao vivo: 26/26 (novos: escala na viewport ortogonal, extensão da
   cena em `ModelData.scenes`). `TC_ModelData` deixou de depender do modelo aberto.
 
-Próximo: template `.layout` do usuário + auto-texto de cena/escala (P4.4),
+- Template `.layout` do usuário (opção "Carimbo: Meu template do LayOut…",
+  lembrado entre sessões): capa removida, carimbo/moldura do template em toda
+  prancha, viewport no maior espaço livre + legenda (cena · descrição ·
+  escala). Ao vivo com Contemporary e Simple A3: 4 pranchas em 5 s.
+  UI separada em `dialog.rb`; `OutputPath` e `SceneFilter` extraídos.
+  127 unitários; TestUp 28/28.
+
+Próximo: `scene_manager` (prioridade 2 do roadmap) + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap
