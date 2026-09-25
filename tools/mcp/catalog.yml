@@ -221,9 +221,9 @@ groups:
       create_vray_material: planned
       update_vray_material: planned
       material_preview: planned
-      list_lights: planned
-      create_light: planned
-      update_light: planned
+      list_lights: done
+      create_light: done
+      update_light: done
       set_environment_hdri: planned
       set_physical_camera: planned
       render_scene: done

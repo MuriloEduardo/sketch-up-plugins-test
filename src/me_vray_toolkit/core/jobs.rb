@@ -36,8 +36,9 @@ module MuriloEduardo
         end
       end
 
-      @jobs = {}
-      @sequence = 0
+      # ||= keeps running jobs when the file is reloaded during development.
+      @jobs ||= {}
+      @sequence ||= 0
 
       class << self
 

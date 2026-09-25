@@ -86,6 +86,22 @@ Render por script, verificado ao vivo **[7.20, 2026-09-25]**:
   (O flag `user_data` de `Plugin#each` não marca `img_width`, mas ele
   persiste mesmo assim.)
 
+Luzes por script, verificado ao vivo **[7.20, 2026-09-25]**:
+- `VRay::Command.create_rectangle_light(context:, width:, height:)`, `create_sphere_light(context:, radius:)`,
+  `create_spot_light(context:, cone:, penumbra:)`, `create_omni_light(context:)`,
+  `create_ies_light(context:, path:)`, `create_dome_light(context:, path:)` **[interno]**:
+  criam o plugin (`/Rectangle Light`, depois `/Rectangle Light#1`…) e uma
+  **definição de componente** de mesmo nome **sem instância**; não abrem
+  ferramenta. A luz só vale no render depois de `entities.add_instance`
+  (inclusive o domo, que vai na origem).
+- Emissão no **−Z local** da instância (sem rotação, aponta para baixo).
+- Parâmetros do core `LightRectangle`: `intensity` (30 padrão), `color`
+  (`VRay::AColor`, `to_a` = rgba 0–1), `u_size`/`v_size` = **meia** largura/altura
+  em **polegadas** (os `width:`/`height:` do comando não chegaram a eles),
+  `invisible`, `enabled`, `doubleSided`. Sol: `/SunLight` com `enabled`,
+  `intensity_multiplier`, `size_multiplier`, `turbidity`, `ozone`.
+- HDRI de teste no próprio V-Ray: `extension/ruby/resources/Default Dome Light Texture.exr`.
+
 Estados do renderer (doc): `:idleInitialized`, `:idleStopped`, `:idleError`,
 `:idleFrameDone`, `:idleDone`, `:preparing`, `:rendering`, `:renderingPaused`,
 `:renderingAwaitingChanges`.

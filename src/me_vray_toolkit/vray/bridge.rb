@@ -250,6 +250,90 @@ module MuriloEduardo
         { width: image.width, height: image.height }
       end
 
+      # Light kinds and the (internal, V-Ray 7.20) command that creates each.
+      # The command adds a V-Ray light plugin and a SketchUp component
+      # definition with the same name and no instance; we place the instance.
+      LIGHT_COMMANDS = {
+        rectangle: :create_rectangle_light, sphere: :create_sphere_light, spot: :create_spot_light,
+        omni: :create_omni_light, ies: :create_ies_light, dome: :create_dome_light,
+      }.freeze
+
+      # Light parameters we expose (core layer; kept when the model is saved).
+      # Sizes are in inches; u_size/v_size are half the rectangle sides.
+      LIGHT_PARAMETERS = %i[enabled intensity color invisible u_size v_size radius intensity_multiplier].freeze
+
+      # @return [Array<Hash>] `{ name:, type:, enabled:, intensity:, color: [r, g, b] }`
+      #   (color 0-255) for every V-Ray light plugin
+      def self.lights
+        found = []
+        scene.each do |plugin|
+          next unless plugin.category == :light
+
+          color = value_or_nil(plugin, :color)
+          found << { name: plugin.name, type: plugin.type.to_s, enabled: value_or_nil(plugin, :enabled),
+                     intensity: value_or_nil(plugin, :intensity), color: color && to_rgb(color), }
+        end
+        found
+      end
+
+      # Creates a light with V-Ray's own command (internal API).
+      #
+      # @param kind [Symbol] a key of LIGHT_COMMANDS
+      # @param model [Sketchup::Model]
+      # @param options [Hash] command options, e.g. `width:`, `height:`,
+      #   `radius:` (inches) or `path:` (IES/HDRI file)
+      # @return [Array(String, Sketchup::ComponentDefinition)] plugin name and
+      #   the new definition to place
+      # @raise [NotAvailable] when this V-Ray has no such command
+      def self.create_light(kind, model:, **)
+        command = LIGHT_COMMANDS.fetch(kind)
+        unless defined?(::VRay::Command) && ::VRay::Command.respond_to?(command)
+          raise NotAvailable, "This V-Ray cannot create #{kind} lights by script"
+        end
+
+        before_plugins = lights.map { |light| light[:name] }
+        before_definitions = model.definitions.to_a
+        ::VRay::Command.public_send(command, context: context, **)
+        plugin = (lights.map { |light| light[:name] } - before_plugins).first
+        definition = (model.definitions.to_a - before_definitions).first
+        raise NotAvailable, "V-Ray did not create the #{kind} light" unless plugin
+
+        [plugin, definition]
+      end
+
+      # @param name [String] light plugin name, e.g. "/Rectangle Light"
+      # @param values [Hash] keys of LIGHT_PARAMETERS; `color` as [r, g, b] 0-255
+      # @raise [ArgumentError] on an unknown light or parameter
+      def self.update_light(name, values)
+        unknown = values.keys - LIGHT_PARAMETERS
+        raise ArgumentError, "unknown light parameter(s): #{unknown.join(', ')}" unless unknown.empty?
+
+        change do |current_scene|
+          plugin = current_scene[name] or raise ArgumentError, "no V-Ray light named #{name}"
+          values.each do |key, value|
+            plugin[key] = key == :color ? ::VRay::AColor.new(*value.map { |channel| channel / 255.0 }, 1.0) : value
+          end
+        end
+      end
+
+      def self.light_parameter?(plugin, parameter)
+        found = false
+        # VRay::Scene::Plugin#each yields parameters; it has no each_key.
+        plugin.each { |name, *| found ||= name == parameter } # rubocop:disable Style/HashEachMethods
+        found
+      end
+      private_class_method :light_parameter?
+
+      def self.value_or_nil(plugin, parameter)
+        light_parameter?(plugin, parameter) ? plugin[parameter] : nil
+      end
+      private_class_method :value_or_nil
+
+      def self.to_rgb(color)
+        color.to_a.first(3).map { |channel| (channel * 255).round.clamp(0, 255) }
+      end
+      private_class_method :to_rgb
+
       # Snapshot of the environment, useful for diagnostics and bug reports.
       #
       # @return [Hash{Symbol => Object}]

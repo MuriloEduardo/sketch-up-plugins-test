@@ -89,8 +89,14 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
   `scene_review`, verificados ao vivo. O protocolo agora é recriado a cada
   mensagem (recarregar código vale mesmo com o servidor ligado).
 
-Próximo (V-Ray): materiais VRayMtl e luzes via MCP, render de todas as
-cenas em lote, variações de material; depois geometria e materiais SketchUp. + auto-texto de cena/escala (P4.4),
+- Luzes V-Ray via MCP: `list_lights`, `create_light` (retângulo, esfera,
+  spot, omni, IES, domo com HDRI; posição + alvo em metros), `update_light`
+  (inclui o sol). Verificado ao vivo com render: luz vermelha mirada na
+  fachada, domo com HDRI. Achados na referência (definição sem instância,
+  emissão em −Z, tamanhos em meia-medida/polegadas).
+
+Próximo (V-Ray): materiais VRayMtl via MCP, render de todas as cenas em
+lote, variações de material. + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap

@@ -2,6 +2,7 @@
 
 # Loads every MCP tool group; each registers its actions in {Actions}.
 Sketchup.require('me_vray_toolkit/mcp/tools/inventory')
+Sketchup.require('me_vray_toolkit/mcp/tools/lights')
 Sketchup.require('me_vray_toolkit/mcp/tools/model')
 Sketchup.require('me_vray_toolkit/mcp/tools/render')
 Sketchup.require('me_vray_toolkit/mcp/tools/render_settings')

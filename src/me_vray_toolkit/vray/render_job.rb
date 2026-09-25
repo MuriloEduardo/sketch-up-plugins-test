@@ -38,7 +38,8 @@ module MuriloEduardo
 
         end
 
-        @active = {}
+        # ||= keeps a running render when the file is reloaded during development.
+        @active ||= {}
 
         class << self
 
