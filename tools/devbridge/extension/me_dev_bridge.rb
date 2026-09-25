@@ -12,7 +12,7 @@ module MuriloEduardoDev
     unless file_loaded?(__FILE__)
       EXTENSION = SketchupExtension.new('Dev Bridge (DEV ONLY)', 'me_dev_bridge/main')
       EXTENSION.description = 'Development-only remote bridge. Executes Ruby sent over the network.'
-      EXTENSION.version     = '0.2.1'
+      EXTENSION.version     = '0.2.2'
       EXTENSION.copyright   = 'Murilo Eduardo © 2026'
       EXTENSION.creator     = 'Murilo Eduardo'
       Sketchup.register_extension(EXTENSION, true)

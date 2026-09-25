@@ -11,7 +11,9 @@ Sketchup.require('me_dev_bridge/testup_runner')
 Sketchup.require('me_dev_bridge/error_journal')
 Sketchup.require('me_dev_bridge/console_parser')
 Sketchup.require('me_dev_bridge/session_markers')
+Sketchup.require('me_dev_bridge/windows_processes')
 Sketchup.require('me_dev_bridge/port_owner')
+Sketchup.require('me_dev_bridge/ghost_watch')
 Sketchup.require('me_dev_bridge/error_uploader')
 Sketchup.require('me_dev_bridge/toolkit_errors')
 Sketchup.require('me_dev_bridge/error_context')
@@ -22,7 +24,7 @@ Sketchup.require('me_dev_bridge/menu')
 module MuriloEduardoDev
   module DevBridge
 
-    BRIDGE_VERSION = '0.2.1'
+    BRIDGE_VERSION = '0.2.2'
     MENU_TITLE = 'Dev Bridge (DEV ONLY)'
 
     # @return [String] %APPDATA%/MuriloEduardoDev
@@ -76,17 +78,28 @@ module MuriloEduardoDev
       }
     end
 
-    # Starts the server. A failure is recorded in the error audit with the
-    # process holding the port, and explained to the user.
+    # Starts the server. When a ghost SketchUp (closed, but its process never
+    # ended) holds the port, ends it and listens again. Any failure is recorded
+    # in the error audit with the process holding the port, and explained.
     #
     # @param interactive [Boolean] false at SketchUp startup: the dialog then
     #   waits until SketchUp finished loading
     def self.start(interactive: true)
       server.start
+    rescue Errno::EADDRINUSE => error
+      ghost = GhostWatch.reclaim(config.port)
+      return if ghost && GhostWatch.listening_after_retries? { server.start }
+
+      report_start_failure(error, interactive, ghost_ended: ghost)
     rescue StandardError => error
+      report_start_failure(error, interactive)
+    end
+
+    def self.report_start_failure(error, interactive, ghost_ended: nil)
       owner = error.is_a?(Errno::EADDRINUSE) ? PortOwner.lookup(config.port) : nil
       Diagnostics.record_exception(error, source: 'bridge', context: { action: 'start', port: config.port,
-                                                                       interactive: interactive, port_owner: owner, })
+                                                                       interactive: interactive, port_owner: owner,
+                                                                       ghost_ended: ghost_ended, })
       message = PortOwner.explain(error, owner, "#{config.bind}:#{config.port}")
       return UI.messagebox(message, MB_MULTILINE, MENU_TITLE) if interactive
 
@@ -114,6 +127,7 @@ module MuriloEduardoDev
       end
       Diagnostics.watch_toolkit
       start(interactive: false) if config.autostart?
+      GhostWatch.scan_later
       BridgeMenu.install
       file_loaded(__FILE__)
     end

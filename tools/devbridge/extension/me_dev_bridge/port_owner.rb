@@ -30,7 +30,11 @@ module MuriloEduardoDev
         nil
       end
 
-      # @param tasklist [String] output of `tasklist /FI "PID eq N" /FO CSV /NH`
+      # @param pid [Integer]
+      # @return [String] CSV without header, one line per process
+      def self.tasklist_command(pid) = %(tasklist /FI "PID eq #{Integer(pid)}" /FO CSV /NH)
+
+      # @param tasklist [String] output of {.tasklist_command}
       # @return [String, nil] image name, e.g. "SketchUp.exe"
       def self.image_name(tasklist)
         first = tasklist.b.lines.find { |line| line.start_with?('"') }
@@ -48,7 +52,8 @@ module MuriloEduardoDev
         if owner && owner[:same_process]
           lines << 'This SketchUp already holds the port: the bridge is probably running. Use Connection Info.'
         elsif owner
-          lines << "The port is held by #{owner[:name] || 'another program'} (PID #{owner[:pid]})."
+          lines << "The port is held by #{owner[:name] || 'another program'} (PID #{owner[:pid]}" \
+                   "#{', with a window: it may hold unsaved work, so it was not ended' if owner[:window]})."
           lines << 'If it is another SketchUp window, close it (or end it in the Task Manager if it is frozen) ' \
                    'and Start again.'
         end
@@ -57,16 +62,16 @@ module MuriloEduardoDev
       end
 
       # @param port [Integer]
-      # @return [Hash, nil] pid:, name:, same_process:
+      # @return [Hash, nil] pid:, name:, same_process:, window: (nil when unknown)
       def self.lookup(port)
         return unless Gem.win_platform?
 
-        pid = listening_pid(`netstat -ano -p tcp`, port)
+        pid = listening_pid(WindowsProcesses.capture('netstat -ano -p tcp'), port)
         return unless pid
 
-        { pid: pid, name: image_name(`tasklist /FI "PID eq #{pid}" /FO CSV /NH`), same_process: pid == Process.pid }
-      rescue StandardError
-        nil
+        sketchup = WindowsProcesses.sketchup.find { |process| process[:pid] == pid }
+        name = sketchup ? 'SketchUp.exe' : image_name(WindowsProcesses.capture(tasklist_command(pid)))
+        { pid: pid, name: name, same_process: pid == Process.pid, window: sketchup&.fetch(:window) }
       end
 
     end

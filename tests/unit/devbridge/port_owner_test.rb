@@ -28,6 +28,13 @@ class DevBridgePortOwnerTest < Minitest::Test
     assert_nil(PortOwner.image_name("INFO: No tasks are running which match the specified criteria.\n"))
   end
 
+  def test_explains_that_a_sketchup_with_a_window_is_left_alone
+    owner = { pid: 7, name: 'SketchUp.exe', same_process: false, window: true }
+    text = PortOwner.explain(Errno::EADDRINUSE.new('bind'), owner, 'a:1')
+
+    assert_includes(text, 'unsaved work')
+  end
+
   def test_explains_another_sketchup_holding_the_port
     text = PortOwner.explain(Errno::EADDRINUSE.new('bind'), { pid: 4321, name: 'SketchUp.exe', same_process: false },
                              '127.0.0.1:7860')
