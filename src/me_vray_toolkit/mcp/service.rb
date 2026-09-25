@@ -5,6 +5,7 @@ Sketchup.require('me_vray_toolkit/core/events')
 Sketchup.require('me_vray_toolkit/core/params')
 Sketchup.require('me_vray_toolkit/mcp/endpoint')
 Sketchup.require('me_vray_toolkit/mcp/http')
+Sketchup.require('me_vray_toolkit/mcp/prompts')
 Sketchup.require('me_vray_toolkit/mcp/protocol')
 Sketchup.require('me_vray_toolkit/mcp/tool_listing')
 Sketchup.require('me_vray_toolkit/mcp/tool_result')
@@ -85,15 +86,17 @@ module MuriloEduardo
 
           def server
             @server ||= Server.new(
-                endpoint: Endpoint.new(protocol: protocol, token: -> { token }),
+                # The protocol is rebuilt per message (cheap), so reloaded tools
+                # and prompts apply even while the server runs.
+                endpoint: Endpoint.new(protocol: self, token: -> { token }),
                 start_timer: ->(interval, &block) { UI.start_timer(interval, true, &block) },
                 stop_timer: ->(id) { UI.stop_timer(id) }
               )
           end
 
           def protocol
-            @protocol ||= Protocol.new(actions: Actions, server: { name: SERVER_NAME, version: version },
-                                       instructions: INSTRUCTIONS)
+            Protocol.new(actions: Actions, server: { name: SERVER_NAME, version: version }, instructions: INSTRUCTIONS,
+                         prompts: Prompts)
           end
 
           def version

@@ -78,6 +78,7 @@ O pedido mais recorrente e sem produto dedicado.
 
 | # | Funcionalidade | Evidência | Status |
 |---|---|---|---|
+| P1.0 | **Base de render via MCP** (job assíncrono, configurações, imagem ao agente, cancelamento, skill `render_setup`) | pedido do usuário 2026-09-25 | beta, verificado ao vivo |
 | P1.1 | **Variações de material**: renderizar o mesmo enquadramento com N materiais (ex.: 37 tecidos de cadeira), nome de arquivo por variação | Chaos 118077 (Chaos escreveu script ad hoc) | ideia |
 | P1.2 | **Turntable / ângulos**: girar objeto ou câmera em passos (8 vistas por produto × cores) | Chaos 110768 | ideia |
 | P1.3 | **Fila multi-arquivo**: renderizar cenas de vários `.skp` em sequência (noite toda) | Chaos 112672 (script "usa classes internas") | ideia |

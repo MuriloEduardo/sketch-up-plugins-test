@@ -52,6 +52,7 @@ eventos e abrangência. Dois eixos, e só eles:
 | Render V-Ray assíncrono (renderer próprio, eventos do V-Ray, imagem ao lado do modelo) | `vray/render_job.rb`, `vray/render_output.rb`, `VRayBridge.start_render` | TestUp + ao vivo |
 | Ferramentas V-Ray: `vray_status`, `get_render_settings`, `set_render_settings`, `render_scene`, `get_render_status` (com imagem), `cancel_render` | `mcp/tools/render*.rb` | ao vivo pelo proxy |
 | Catálogo: 176 classes → 17 grupos (144 ferramentas) ou internas, com teste de cobertura | `tools/mcp/catalog.yml` | unit |
+| Prompts MCP ("skills" de fluxo): `render_setup`, `presentation_package`, `scene_review` | `mcp/prompts.rb`, `mcp/skills.rb` | unit + ao vivo |
 
 Para usar o proxy no Claude Code (desenvolvimento):
 `claude mcp add sketchup-dev -- python3 tools/devbridge/mcp_proxy.py`.

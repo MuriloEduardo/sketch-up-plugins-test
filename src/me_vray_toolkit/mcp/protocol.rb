@@ -40,13 +40,14 @@ module MuriloEduardo
         # @param instructions [String, nil] hints for the model using the tools
         # @param enabled [#call] (Actions::Action) → Boolean; hides tools of
         #   groups the user switched off
-        # @param on_error [#call, nil] (action name, exception) for logging
-        def initialize(actions:, server:, instructions: nil, enabled: ->(_action) { true }, on_error: nil)
+        # @param prompts [#list_result, #get_result, nil] usually {Prompts};
+        #   failures are published by {Actions} as "action.failed"
+        def initialize(actions:, server:, instructions: nil, enabled: ->(_action) { true }, prompts: nil)
           @actions = actions
           @server = { 'name' => server.fetch(:name), 'version' => server.fetch(:version) }
           @instructions = instructions
           @enabled = enabled
-          @on_error = on_error
+          @prompts = prompts
         end
 
         # @param body [String] raw JSON from the transport
@@ -98,7 +99,8 @@ module MuriloEduardo
           when 'tools/call' then call_tool(params)
           when 'resources/list' then { 'resources' => [] }
           when 'resources/templates/list' then { 'resourceTemplates' => [] }
-          when 'prompts/list' then { 'prompts' => [] }
+          when 'prompts/list' then @prompts ? @prompts.list_result : { 'prompts' => [] }
+          when 'prompts/get' then prompt(params)
           else raise RpcError.new(METHOD_NOT_FOUND, "Method not found: #{method}")
           end
         end
@@ -108,11 +110,25 @@ module MuriloEduardo
           version = SUPPORTED_VERSIONS.include?(requested) ? requested : SUPPORTED_VERSIONS.first
           result = {
             'protocolVersion' => version,
-            'capabilities' => { 'tools' => { 'listChanged' => false } },
+            'capabilities' => capabilities,
             'serverInfo' => @server,
           }
           result['instructions'] = @instructions if @instructions
           result
+        end
+
+        def capabilities
+          result = { 'tools' => { 'listChanged' => false } }
+          result['prompts'] = { 'listChanged' => false } if @prompts
+          result
+        end
+
+        def prompt(params)
+          raise RpcError.new(METHOD_NOT_FOUND, 'This server has no prompts') unless @prompts
+
+          @prompts.get_result(params)
+        rescue ArgumentError => error
+          raise RpcError.new(INVALID_PARAMS, error.message)
         end
 
         def visible_actions
@@ -130,7 +146,6 @@ module MuriloEduardo
         rescue RpcError
           raise
         rescue StandardError => error
-          @on_error&.call(name, error)
           ToolResult.failure("#{error.class}: #{error.message}")
         end
 

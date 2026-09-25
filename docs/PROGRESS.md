@@ -85,8 +85,12 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
   Achados: progresso do V-Ray é por etapa; configurações só persistem ao
   salvar o modelo. TestUp 36/36; 175 unitários. Renders no painel.
 
-Próximo: prompts MCP ("skills" de render e apresentação), materiais/luzes
-V-Ray, render de todas as cenas em lote, grupos de geometria e materiais. + auto-texto de cena/escala (P4.4),
+- Prompts MCP (skills): `render_setup`, `presentation_package`,
+  `scene_review`, verificados ao vivo. O protocolo agora é recriado a cada
+  mensagem (recarregar código vale mesmo com o servidor ligado).
+
+Próximo (V-Ray): materiais VRayMtl e luzes via MCP, render de todas as
+cenas em lote, variações de material; depois geometria e materiais SketchUp. + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap
