@@ -60,7 +60,15 @@ Diário curto de estado. Mais recente no topo. Atualize ao fim de cada sessão.
   UI separada em `dialog.rb`; `OutputPath` e `SceneFilter` extraídos.
   127 unitários; TestUp 28/28.
 
-Próximo: `scene_manager` (prioridade 2 do roadmap) + auto-texto de cena/escala (P4.4),
+- `sketchup/mesh_export.rb`: retrato 3D leve do modelo visível (triângulos
+  por cor de material + arestas duras, metros, Z para cima), só leitura.
+  Modelo de teste: 122 faces em 32 ms, 147 KB de JSON. Usado pelo visualizador
+  3D do painel; vira ferramenta MCP. TestUp 33/33.
+- Painel: versão mobile first, imagens em tela cheia (setas, Esc, arrastar
+  com o dedo) e visualizador 3D (three.js r128) do `board/model3d`.
+
+Próximo: MCP (pedido do usuário: máximo de ferramentas) — arquitetura em
+`docs/mcp.md`, catálogo cobrindo todas as classes da API, base do servidor. + auto-texto de cena/escala (P4.4),
 escala por cena ortogonal, depois `scene_manager`.
 
 ## 2026-09-24 — Pesquisa de demanda nos fóruns + fase LLM/MCP no roadmap
