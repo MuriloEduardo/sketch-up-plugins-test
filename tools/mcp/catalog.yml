@@ -1,0 +1,305 @@
+# Catálogo das ferramentas MCP (docs/mcp.md).
+#
+# Regras verificadas por tests/unit/mcp/catalog_test.rb:
+# - toda classe de docs/reference/sketchup-api-index.md e toda classe V-Ray
+#   de VRAY_CLASSES aparece exatamente uma vez: em `classes` de um grupo ou
+#   em `internal` (com o motivo);
+# - toda ferramenta `done` existe no código (Actions.register name: '...');
+# - toda ação registrada no código está aqui.
+#
+# status: done | planned
+
+groups:
+  model:
+    summary: "O modelo como um todo, unidades, opções, georreferência, ambientes, classificação, desfazer."
+    classes: [Sketchup, Sketchup::Model, Sketchup::OptionsManager, Sketchup::OptionsProvider,
+              Sketchup::RegionalSettings, Sketchup::Axes, Sketchup::Environment, Sketchup::Environments,
+              Sketchup::ClassificationSchema, Sketchup::Classifications, Geom::LatLong, Geom::UTM]
+    tools:
+      model_info: done
+      get_model_options: planned
+      set_units: planned
+      save_model: planned
+      save_model_copy: planned
+      undo_last: planned
+      purge_unused: planned
+      get_georeference: planned
+      set_georeference: planned
+      list_environments: planned
+      set_environment: planned
+      list_classifications: planned
+      classify_entity: planned
+
+  inspect:
+    summary: "Consultar, inspecionar e alterar qualquer entidade (camada genérica e segura) e atributos."
+    classes: [Sketchup::Entity, Sketchup::Drawingelement, Sketchup::Entities, Sketchup::InstancePath,
+              Sketchup::AttributeDictionary, Sketchup::AttributeDictionaries, Sketchup::Set]
+    tools:
+      query_entities: planned
+      inspect_entity: planned
+      set_entity_properties: planned
+      find_by_persistent_id: planned
+      get_attributes: planned
+      set_attributes: planned
+      delete_attributes: planned
+
+  geometry:
+    summary: "Criar e editar geometria; medidas; malha 3D."
+    classes: [Geom, Geom::Point3d, Geom::Vector3d, Geom::BoundingBox, Geom::PolygonMesh,
+              Sketchup::EntitiesBuilder, Sketchup::Face, Sketchup::Edge, Sketchup::Vertex, Sketchup::Loop,
+              Sketchup::EdgeUse, Sketchup::Curve, Sketchup::ArcCurve, Array, Numeric, Length, String]
+    tools:
+      create_box: planned
+      create_face: planned
+      create_edges: planned
+      create_circle: planned
+      create_arc: planned
+      create_polygon: planned
+      pushpull_face: planned
+      followme: planned
+      offset_face: planned
+      intersect_entities: planned
+      soften_edges: planned
+      erase_entities: planned
+      measure_distance: planned
+      compute_area: planned
+      get_model_mesh: planned
+      create_wall: planned
+      create_slab: planned
+      cut_opening: planned
+
+  transform:
+    summary: "Mover, girar, escalar, espelhar, copiar em matriz, explodir."
+    classes: [Geom::Transformation]
+    tools:
+      move_entities: planned
+      rotate_entities: planned
+      scale_entities: planned
+      mirror_entities: planned
+      array_copies: planned
+      explode_entities: planned
+
+  components:
+    summary: "Componentes, grupos, definições, comportamento, componentes dinâmicos."
+    classes: [Sketchup::ComponentDefinition, Sketchup::ComponentInstance, Sketchup::Group,
+              Sketchup::DefinitionList, Sketchup::Behavior, Sketchup::Snap]
+    tools:
+      list_components: done
+      list_instances: planned
+      place_component: planned
+      load_component_file: planned
+      create_component: planned
+      create_group: planned
+      make_unique: planned
+      replace_definition: planned
+      rename_definition: planned
+      set_component_behavior: planned
+      save_component_as: planned
+      get_dynamic_attributes: planned
+      set_dynamic_attributes: planned
+
+  materials:
+    summary: "Materiais do SketchUp, texturas e cores."
+    classes: [Sketchup::Material, Sketchup::Materials, Sketchup::Texture, Sketchup::TextureWriter,
+              Sketchup::UVHelper, Sketchup::Color, Sketchup::ImageRep]
+    tools:
+      list_materials: done
+      create_material: planned
+      update_material: planned
+      apply_material: planned
+      replace_material: planned
+      load_material_file: planned
+      export_textures: planned
+      purge_materials: planned
+
+  tags:
+    summary: "Tags (layers), pastas e tracejados."
+    classes: [Sketchup::Layer, Sketchup::Layers, Sketchup::LayerFolder, Sketchup::LineStyle, Sketchup::LineStyles]
+    tools:
+      list_tags: done
+      create_tag: planned
+      update_tag: planned
+      delete_tag: planned
+      create_tag_folder: planned
+      move_to_tag: planned
+      list_line_styles: planned
+
+  scenes:
+    summary: "Cenas, câmera, estilos, sombras e opções de exibição."
+    classes: [Sketchup::Page, Sketchup::Pages, Sketchup::Camera, Sketchup::Animation, Sketchup::Style,
+              Sketchup::Styles, Sketchup::RenderingOptions, Sketchup::ShadowInfo]
+    tools:
+      list_scenes: done
+      create_scene: done
+      activate_scene: done
+      update_scene: planned
+      delete_scene: planned
+      reorder_scenes: planned
+      get_camera: planned
+      set_camera: planned
+      set_standard_view: planned
+      set_shadows: planned
+      list_styles: planned
+      apply_style: planned
+      set_rendering_options: planned
+
+  annotation:
+    summary: "Textos, cotas, guias e cortes."
+    classes: [Sketchup::Text, Sketchup::Dimension, Sketchup::DimensionLinear, Sketchup::DimensionRadial,
+              Sketchup::ConstructionLine, Sketchup::ConstructionPoint, Sketchup::SectionPlane]
+    tools:
+      add_text: planned
+      add_dimension: planned
+      add_guide: planned
+      add_section_plane: planned
+      set_active_section: planned
+
+  selection:
+    summary: "Ler e definir a seleção do usuário."
+    classes: [Sketchup::Selection]
+    tools:
+      get_selection: done
+      select_entities: planned
+      clear_selection: planned
+
+  vision:
+    summary: "O agente vê o modelo: imagem da vista e retrato 3D."
+    classes: [Sketchup::View]
+    tools:
+      capture_view: done
+      capture_scenes: planned
+      zoom_extents: planned
+
+  import_export:
+    summary: "Importar e exportar arquivos 2D/3D e imagens."
+    classes: [Sketchup::Image, Sketchup::Skp]
+    tools:
+      import_file: planned
+      export_file: planned
+      import_image: planned
+      get_skp_file_info: planned
+
+  layout:
+    summary: "Documentos do LayOut, pranchas, viewports, anotações e PDF."
+    classes: [Layout, Layout::AngularDimension, Layout::AutoTextDefinition, Layout::AutoTextDefinitions,
+              Layout::ConnectionPoint, Layout::Dictionary, Layout::Document, Layout::Ellipse, Layout::Entities,
+              Layout::Entity, Layout::FormattedText, Layout::Grid, Layout::Group, Layout::Image, Layout::Label,
+              Layout::Layer, Layout::LayerInstance, Layout::Layers, Layout::LinearDimension, Layout::Page,
+              Layout::PageInfo, Layout::Pages, Layout::Path, Layout::Rectangle, Layout::ReferenceEntity,
+              Layout::SketchUpModel, Layout::Style, Layout::Table, Layout::TableCell, Layout::TableColumn,
+              Layout::TableRow, Geom::Point2d, Geom::Vector2d, Geom::Bounds2d, Geom::OrientedBounds2d,
+              Geom::Transformation2d]
+    tools:
+      generate_layout_sheets: done
+      create_layout_document: planned
+      open_layout_document: planned
+      list_layout_pages: planned
+      add_layout_page: planned
+      add_layout_viewport: planned
+      add_layout_text: planned
+      add_layout_table: planned
+      add_layout_dimension: planned
+      add_layout_label: planned
+      add_layout_image: planned
+      add_layout_shape: planned
+      set_auto_text: planned
+      set_layout_page_info: planned
+      export_layout: planned
+
+  vray:
+    summary: "Render V-Ray, configurações, materiais, luzes, câmera, lote e arquivos."
+    classes: [VRay::AColor, VRay::Color, VRay::Matrix, VRay::Vector, VRay::Transform, VRay::ModelExporter,
+              VRay::Proxy, VRay::Scene, VRay::Scene::ChangeSet, VRay::Scene::Plugin, VRay::ScenePreview,
+              VRay::UVTextureSampler, VRay::VRayImage, VRay::VRayRenderer, VRay::VRayRenderer::Plugin,
+              VRay::GeomUtils, VRay::Context, VRay::Command, VRay::BatchExporter]
+    tools:
+      vray_status: planned
+      get_render_settings: planned
+      set_render_settings: planned
+      apply_quality_preset: planned
+      list_vray_materials: planned
+      create_vray_material: planned
+      update_vray_material: planned
+      material_preview: planned
+      list_lights: planned
+      create_light: planned
+      update_light: planned
+      set_environment_hdri: planned
+      set_physical_camera: planned
+      render_scene: planned
+      render_all_scenes: planned
+      render_material_variations: planned
+      export_vrscene: planned
+      list_missing_files: planned
+      relink_files: planned
+      create_proxy: planned
+
+  reports:
+    summary: "Relatórios e quantitativos (features)."
+    classes: []
+    tools:
+      audit_scene: done
+      quantity_takeoff: planned
+      component_schedule: planned
+
+  app:
+    summary: "SketchUp como aplicativo e conversa com o usuário."
+    classes: [UI, UI::Notification, Sketchup::ExtensionsManager]
+    tools:
+      notify_user: planned
+      ask_user_confirmation: planned
+      list_extensions: planned
+
+  workflows:
+    summary: "Fluxos completos que encadeiam vários grupos."
+    classes: []
+    tools:
+      presentation_package: planned
+      turntable_render: planned
+      audit_and_fix: planned
+
+internal:
+  _top_level.rb: carregamento de arquivos da extensão (file_loaded?), não é ação
+  LanguageHandler: traduções da própria extensão (usamos I18n)
+  SketchupExtension: registro da extensão
+  Sketchup::Console: console Ruby de desenvolvimento
+  Sketchup::Menu: menus da extensão (Commands/Menu)
+  UI::Command: comandos da extensão
+  UI::Toolbar: barra de ferramentas da extensão
+  UI::HtmlDialog: janelas da extensão
+  UI::WebDialog: legado, substituído por HtmlDialog
+  Sketchup::Tool: ferramenta interativa (mouse do usuário), não serve a um agente
+  Sketchup::Tools: pilha de ferramentas interativas
+  Sketchup::InputPoint: inferência do mouse
+  Sketchup::PickHelper: seleção pelo mouse
+  Sketchup::Overlay: desenho sobre a vista; candidato a mostrar o que o agente faz (futuro)
+  Sketchup::OverlaysManager: gerência de overlays
+  Sketchup::Importer: registrar importadores próprios (usamos Model#import)
+  Sketchup::LoadHandler: progresso de carga de componentes
+  Sketchup::Licensing: licença da extensão (pilar P7)
+  Sketchup::Licensing::ExtensionLicense: licença da extensão (pilar P7)
+  Sketchup::Http: rede; usada pelo relay (Modo 2), não exposta ao agente
+  Sketchup::Http::Request: rede (relay)
+  Sketchup::Http::Response: rede (relay)
+  Layout::LockedEntityError: vira erro legível da ferramenta
+  Layout::LockedLayerError: vira erro legível da ferramenta
+  VRay::VRayInit: inicialização do V-Ray fora do SketchUp
+  Sketchup::AppObserver: observador; vira evento no barramento (Events)
+  Sketchup::DefinitionObserver: observador; vira evento
+  Sketchup::DefinitionsObserver: observador; vira evento
+  Sketchup::DimensionObserver: observador; vira evento
+  Sketchup::EntitiesObserver: observador; vira evento
+  Sketchup::EntityObserver: observador; vira evento
+  Sketchup::EnvironmentsObserver: observador; vira evento
+  Sketchup::FrameChangeObserver: observador; vira evento
+  Sketchup::InstanceObserver: observador; vira evento
+  Sketchup::LayersObserver: observador; vira evento
+  Sketchup::MaterialsObserver: observador; vira evento
+  Sketchup::ModelObserver: observador; vira evento
+  Sketchup::OptionsProviderObserver: observador; vira evento
+  Sketchup::PagesObserver: observador; vira evento
+  Sketchup::RenderingOptionsObserver: observador; vira evento
+  Sketchup::SelectionObserver: observador; vira evento
+  Sketchup::ShadowInfoObserver: observador; vira evento
+  Sketchup::ToolsObserver: observador; vira evento
+  Sketchup::ViewObserver: observador; vira evento
